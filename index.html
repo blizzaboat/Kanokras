@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>กนกรัศม์ — ระบบบิลหอพัก</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --ink:#1b2a41;        /* น้ำเงินเข้ม ตัวอักษรหลัก */
+  --teal:#0e7c66;       /* เขียวสลิปธนาคาร ปุ่มหลัก */
+  --teal-dark:#0a5f4e;
+  --amber:#b45309;      /* ค้างชำระ */
+  --bg:#f2f4f7;
+  --paper:#ffffff;
+  --line:#e3e8ef;
+  --muted:#5b6b7f;
+  --ok:#0e7c66;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:15px}
+
+/* ---------- โครงหลัก ---------- */
+header.app{background:var(--ink);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header.app h1{font-size:18px;font-weight:700;letter-spacing:.2px}
+header.app .sub{font-size:12px;opacity:.75}
+.month-pick{margin-left:auto;display:flex;align-items:center;gap:8px}
+.month-pick input{border:none;border-radius:8px;padding:7px 10px;background:#2b3c56;color:#fff}
+.month-pick input::-webkit-calendar-picker-indicator{filter:invert(1)}
+#connDot{width:9px;height:9px;border-radius:50%;background:#8a97a8;display:inline-block}
+#connDot.on{background:#3ddc97}
+
+nav.tabs{display:flex;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+nav.tabs button{flex:1;padding:12px 8px;border:none;background:none;font-size:15px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+nav.tabs button.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+main{max-width:1100px;margin:0 auto;padding:16px}
+.tabpage{display:none}
+.tabpage.active{display:block}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;margin-bottom:10px}
+.hint{font-size:13px;color:var(--muted)}
+
+.btn{border:none;border-radius:9px;padding:10px 16px;font-size:15px;font-weight:600}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-ghost{background:#eef2f6;color:var(--ink)}
+.btn-ghost:hover{background:#e2e8f0}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+
+/* ---------- แท็บมิเตอร์ ---------- */
+.rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.room-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px}
+.room-card .rc-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.room-card .rc-head b{font-size:17px}
+.room-card .rc-head span{font-size:12px;color:var(--muted)}
+.meter-row{display:grid;grid-template-columns:20px 1fr 1fr 58px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.meter-row .ico{text-align:center}
+.meter-row .prev{color:var(--muted);text-align:right;padding-right:4px}
+.meter-row input{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums}
+.meter-row input:focus{outline:2px solid var(--teal);border-color:transparent}
+.meter-row .units{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.meter-labels{display:grid;grid-template-columns:20px 1fr 1fr 58px;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px}
+.meter-labels div{text-align:right}
+.savebar{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:14px 0 6px;display:flex;justify-content:center}
+
+/* ---------- แท็บออกบิล ---------- */
+.bill-layout{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media(max-width:820px){.bill-layout{grid-template-columns:1fr}}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.field input,.field select{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.field input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+.fields-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ---------- ใบแจ้งยอด (ตัวบิลจริง) ---------- */
+.bill-stage{display:flex;justify-content:center;align-items:flex-start;overflow:auto}
+#billPaper{width:420px;background:#fff;color:#12233a;padding:26px 28px;border:1px solid var(--line);
+  font-family:'Sarabun',sans-serif;box-shadow:0 4px 18px rgba(27,42,65,.10)}
+#billPaper .bp-top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #12233a;padding-bottom:10px}
+#billPaper .bp-apt{font-size:20px;font-weight:700;letter-spacing:.5px}
+#billPaper .bp-apt small{display:block;font-size:10.5px;font-weight:400;color:#5b6b7f;letter-spacing:1.5px}
+#billPaper .bp-doc{text-align:right}
+#billPaper .bp-doc .t{font-size:15px;font-weight:700}
+#billPaper .bp-doc .n{font-size:11.5px;color:#5b6b7f;font-variant-numeric:tabular-nums}
+#billPaper .bp-meta{display:flex;justify-content:space-between;padding:9px 0;font-size:13px;border-bottom:1px dashed #b9c3d0}
+#billPaper table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+#billPaper th{font-size:11px;color:#5b6b7f;font-weight:600;text-align:right;padding:7px 2px 5px;border-bottom:1px solid #d7dee8}
+#billPaper th:first-child{text-align:left}
+#billPaper td{padding:6.5px 2px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid #eef2f6}
+#billPaper td:first-child{text-align:left}
+#billPaper tr.zero{display:none}
+#billPaper .bp-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
+  background:#12233a;color:#fff;padding:10px 12px;border-radius:6px}
+#billPaper .bp-total b{font-size:19px;font-variant-numeric:tabular-nums}
+#billPaper .bp-foot{margin-top:12px;font-size:12px;color:#39485c;display:flex;justify-content:space-between;gap:10px}
+#billPaper .bp-pay{margin-top:10px;border-top:1px dashed #b9c3d0;padding-top:8px;font-size:11.5px;color:#5b6b7f;white-space:pre-line}
+
+/* ---------- ตั้งค่า ---------- */
+.rates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+code.url{font-size:12px;word-break:break-all;background:#eef2f6;padding:2px 6px;border-radius:6px}
+
+@media print{
+  body *{visibility:hidden}
+  #billPaper,#billPaper *{visibility:visible}
+  #billPaper{position:absolute;left:0;top:0;box-shadow:none;border:none}
+}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div>
+    <h1>กนกรัศม์ <span id="connDot" title="สถานะการเชื่อมต่อ"></span></h1>
+    <div class="sub">ระบบบันทึกมิเตอร์ &amp; ออกบิลค่าหอพัก</div>
+  </div>
+  <div class="month-pick">
+    <label style="font-size:13px">ประจำเดือน</label>
+    <input type="month" id="monthInput">
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="meter" class="active">📟 บันทึกมิเตอร์</button>
+  <button data-tab="bill">🧾 ออกบิล</button>
+  <button data-tab="setting">⚙️ ตั้งค่า</button>
+</nav>
+
+<main>
+
+<!-- ================= แท็บ 1: บันทึกมิเตอร์ ================= -->
+<section class="tabpage active" id="page-meter">
+  <div class="card">
+    <h2>จดมิเตอร์ประจำเดือน <span id="meterMonthLabel"></span></h2>
+    <p class="hint">เลขมิเตอร์ "ครั้งก่อน" ดึงจากเดือนที่แล้วอัตโนมัติ กรอกเฉพาะเลข "ครั้งนี้" ระบบคำนวณหน่วยให้เอง</p>
+  </div>
+  <div class="rooms-grid" id="roomsGrid"></div>
+  <div class="savebar">
+    <button class="btn btn-primary" id="btnSaveReadings" style="min-width:260px">💾 บันทึกมิเตอร์ทั้งหมดลง Google Sheet</button>
+  </div>
+</section>
+
+<!-- ================= แท็บ 2: ออกบิล ================= -->
+<section class="tabpage" id="page-bill">
+  <div class="bill-layout">
+    <div>
+      <div class="card">
+        <h2>ข้อมูลบิล</h2>
+        <div class="field">
+          <label>ห้อง</label>
+          <select id="billRoom"></select>
+        </div>
+        <div class="fields-2">
+          <div class="field"><label>ค่าเช่าห้อง (บาท)</label><input type="number" id="fRent"></div>
+          <div class="field"><label>ยอดค้างชำระเดิม (บาท)</label><input type="number" id="fArrears" value="0"></div>
+          <div class="field"><label>ค่าส่วนกลาง (บาท)</label><input type="number" id="fCommon"></div>
+          <div class="field"><label>ค่าขยะ (บาท)</label><input type="number" id="fGarbage"></div>
+          <div class="field"><label>ค่าโทรศัพท์ (บาท)</label><input type="number" id="fPhone" value="0"></div>
+          <div class="field"><label>ค่าที่จอดรถ (บาท)</label><input type="number" id="fParking" value="0"></div>
+        </div>
+        <div class="field"><label>กำหนดชำระภายในวันที่</label><input type="date" id="fDue"></div>
+        <p class="hint">ค่าน้ำ–ค่าไฟคำนวณจากมิเตอร์ในแท็บแรก × อัตราในแท็บตั้งค่า</p>
+      </div>
+      <div class="card">
+        <h2>ดาวน์โหลด / พิมพ์</h2>
+        <div class="btnrow">
+          <button class="btn btn-primary" id="btnPNG">🖼 บันทึกเป็นภาพ PNG</button>
+          <button class="btn btn-primary" id="btnPDF">📄 บันทึกเป็น PDF</button>
+        </div>
+        <div class="btnrow">
+          <button class="btn btn-ghost" id="btnPrint">🖨 พิมพ์</button>
+          <button class="btn btn-ghost" id="btnAllPDF">📚 PDF รวมทุกห้อง (8 หน้า)</button>
+        </div>
+        <div class="btnrow">
+          <button class="btn btn-ghost" id="btnSaveBill">💾 บันทึกยอดบิลลง Google Sheet</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-stage">
+      <!-- ===== ตัวใบแจ้งยอด ===== -->
+      <div id="billPaper">
+        <div class="bp-top">
+          <div class="bp-apt">กนกรัศม์<small>KANOKAWAT APARTMENT</small></div>
+          <div class="bp-doc">
+            <div class="t">ใบแจ้งยอด</div>
+            <div class="n" id="bpNo">เลขที่ —</div>
+          </div>
+        </div>
+        <div class="bp-meta">
+          <span>ห้อง <b id="bpRoom">—</b>&nbsp; <span id="bpTenant" style="color:#5b6b7f"></span></span>
+          <span>ประจำเดือน <b id="bpMonth">—</b></span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>รายการ</th><th>ครั้งก่อน</th><th>ครั้งหลัง</th><th>หน่วย</th><th>จำนวนเงิน</th>
+          </tr></thead>
+          <tbody id="bpRows"></tbody>
+        </table>
+        <div class="bp-total"><span>รวมทั้งสิ้น</span><b id="bpTotal">0.00</b></div>
+        <div class="bp-foot">
+          <span>กำหนดชำระ: <b id="bpDue">—</b></span>
+          <span>วันที่ออกบิล: <span id="bpIssue"></span></span>
+        </div>
+        <div class="bp-pay" id="bpPayNote"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= แท็บ 3: ตั้งค่า ================= -->
+<section class="tabpage" id="page-setting">
+  <div class="card">
+    <h2>เชื่อมต่อ Google Sheet</h2>
+    <p class="hint">วาง URL ของ Apps Script Web App (ลงท้ายด้วย /exec) จากขั้นตอนในคู่มือติดตั้ง</p>
+    <div class="field" style="margin-top:8px">
+      <label>Web App URL</label>
+      <input type="url" id="setApiUrl" placeholder="https://script.google.com/macros/s/…/exec">
+    </div>
+    <div class="btnrow">
+      <button class="btn btn-primary" id="btnConnect">🔌 เชื่อมต่อและโหลดข้อมูล</button>
+    </div>
+    <p class="hint" style="margin-top:8px">ยังไม่เชื่อมต่อ? แอพจะทำงานใน<b>โหมดทดลอง</b> (ข้อมูลตัวอย่าง ไม่ถูกบันทึกจริง)</p>
+  </div>
+  <div class="card">
+    <h2>อัตราค่าบริการ</h2>
+    <div class="rates-grid">
+      <div class="field"><label>ค่าน้ำ (บาท/หน่วย)</label><input type="number" id="setWaterRate" step="0.5"></div>
+      <div class="field"><label>ค่าไฟ (บาท/หน่วย)</label><input type="number" id="setElecRate" step="0.5"></div>
+      <div class="field"><label>ค่าส่วนกลางเริ่มต้น</label><input type="number" id="setCommon"></div>
+      <div class="field"><label>ค่าขยะเริ่มต้น</label><input type="number" id="setGarbage"></div>
+    </div>
+    <div class="field"><label>ข้อความท้ายบิล (ช่องทางชำระเงิน)</label><input type="text" id="setPayNote"></div>
+    <div class="btnrow">
+      <button class="btn btn-ghost" id="btnSaveLocal">บันทึกในเครื่องนี้</button>
+      <button class="btn btn-primary" id="btnSaveRemote">บันทึกขึ้น Google Sheet</button>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="toast" id="toast"></div>
+<script>
+/* ================= สถานะและที่เก็บข้อมูล ================= */
+const ROOM_LIST = ['101','102','201','202','301','401','501','503'];
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                     'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('knw_'+k); return v===null? d : JSON.parse(v);}catch(e){ return (store._m||{})[k] ?? d; } },
+  set(k, v){ try{ localStorage.setItem('knw_'+k, JSON.stringify(v)); }catch(e){ (store._m = store._m||{})[k]=v; } }
+};
+
+const state = {
+  apiUrl: store.get('apiUrl',''),
+  connected: false,
+  month: new Date().toISOString().slice(0,7),
+  settings: store.get('settings', {waterRate:18, elecRate:8, commonFee:100, garbageFee:30,
+    payNote:'ชำระเงินสดที่สำนักงาน หรือโอนเข้าบัญชีตามที่แจ้งไว้\nกรุณาชำระภายในกำหนด มิฉะนั้นจะมีค่าปรับตามระเบียบหอพัก'}),
+  rooms: ROOM_LIST.map(r => ({room:r, tenant:'', rent:3500, phone:0, parking:0})),
+  readings: {},      // {room: {water, elec}}  ของเดือนที่เลือก
+  prevReadings: {},  // {room: {water, elec}}  ของเดือนก่อนหน้า
+};
+
+/* โหมดทดลอง: มิเตอร์เดือนก่อนตัวอย่าง */
+const DEMO_PREV = {'101':{water:120,elec:4310},'102':{water:98,elec:3985},'201':{water:210,elec:5120},
+  '202':{water:187,elec:4770},'301':{water:64,elec:2890},'401':{water:143,elec:5602},
+  '501':{water:77,elec:3140},'503':{water:156,elec:4468}};
+
+/* ================= ยูทิลิตี ================= */
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+function thaiMonth(ym){ const [y,m]=ym.split('-'); return THAI_MONTHS[+m-1]+' '+(+y+543); }
+function thaiDate(iso){ if(!iso) return '—'; const d=new Date(iso+'T00:00:00');
+  return d.getDate()+' '+THAI_MONTHS[d.getMonth()]+' '+(d.getFullYear()+543); }
+function prevMonthOf(ym){ const [y,m]=ym.split('-').map(Number);
+  const d=new Date(y, m-2, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600); }
+
+/* ================= ชั้นเชื่อมต่อ API (Apps Script) ================= */
+async function apiGet(params){
+  const url = state.apiUrl + '?' + new URLSearchParams(params);
+  const res = await fetch(url);
+  return res.json();
+}
+async function apiPost(payload){
+  const res = await fetch(state.apiUrl, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},  // simple request → ไม่ติด CORS preflight
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+async function connect(){
+  if(!state.apiUrl){ toast('ยังไม่ได้ใส่ Web App URL'); return; }
+  toast('กำลังเชื่อมต่อ…');
+  try{
+    const boot = await apiGet({action:'bootstrap'});
+    if(boot.ok){
+      state.connected = true;
+      if(boot.settings) Object.assign(state.settings, boot.settings);
+      if(boot.rooms && boot.rooms.length) state.rooms = boot.rooms;
+      $('connDot').classList.add('on');
+      toast('เชื่อมต่อ Google Sheet สำเร็จ ✓');
+      await loadMonth();
+      fillSettingsForm(); renderMeterGrid(); refreshBillForm();
+    } else throw new Error(boot.error||'bootstrap failed');
+  }catch(e){
+    state.connected=false; $('connDot').classList.remove('on');
+    toast('เชื่อมต่อไม่สำเร็จ: '+e.message);
+  }
+}
+
+async function loadMonth(){
+  if(state.connected){
+    try{
+      const data = await apiGet({action:'readings', month:state.month, prev:prevMonthOf(state.month)});
+      state.readings = data.readings||{}; state.prevReadings = data.prevReadings||{};
+    }catch(e){ toast('โหลดมิเตอร์ไม่สำเร็จ'); }
+  } else {
+    state.prevReadings = JSON.parse(JSON.stringify(DEMO_PREV));
+    state.readings = store.get('demo_'+state.month, {});
+  }
+}
+
+/* ================= แท็บมิเตอร์ ================= */
+function renderMeterGrid(){
+  $('meterMonthLabel').textContent = thaiMonth(state.month);
+  const g = $('roomsGrid'); g.innerHTML='';
+  state.rooms.forEach(rm=>{
+    const prev = state.prevReadings[rm.room]||{};
+    const cur  = state.readings[rm.room]||{};
+    const el = document.createElement('div');
+    el.className='room-card';
+    el.innerHTML = `
+      <div class="rc-head"><b>ห้อง ${rm.room}</b><span>${rm.tenant||''}</span></div>
+      <div class="meter-labels"><div></div><div>ครั้งก่อน</div><div>ครั้งนี้</div><div>หน่วย</div></div>
+      <div class="meter-row"><span class="ico">💧</span>
+        <span class="prev">${prev.water ?? '—'}</span>
+        <input type="number" inputmode="numeric" data-room="${rm.room}" data-kind="water" value="${cur.water ?? ''}">
+        <span class="units" id="uW${rm.room}">–</span></div>
+      <div class="meter-row"><span class="ico">⚡</span>
+        <span class="prev">${prev.elec ?? '—'}</span>
+        <input type="number" inputmode="numeric" data-room="${rm.room}" data-kind="elec" value="${cur.elec ?? ''}">
+        <span class="units" id="uE${rm.room}">–</span></div>`;
+    g.appendChild(el);
+    updateUnits(rm.room);
+  });
+  g.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const {room, kind} = e.target.dataset;
+      state.readings[room] = state.readings[room]||{};
+      state.readings[room][kind] = e.target.value===''? null : Number(e.target.value);
+      updateUnits(room);
+      if(!state.connected) store.set('demo_'+state.month, state.readings);
+      if($('billRoom').value===room) renderBill();
+    });
+  });
+}
+function unitsOf(room, kind){
+  const p = (state.prevReadings[room]||{})[kind];
+  const c = (state.readings[room]||{})[kind];
+  if(p==null || c==null || c==='') return null;
+  return Math.max(0, c - p);
+}
+function updateUnits(room){
+  const w=unitsOf(room,'water'), e=unitsOf(room,'elec');
+  $('uW'+room).textContent = w==null?'–':w;
+  $('uE'+room).textContent = e==null?'–':e;
+}
+
+async function saveReadings(){
+  const rows = state.rooms.map(rm=>({room:rm.room,
+    water:(state.readings[rm.room]||{}).water ?? null,
+    elec:(state.readings[rm.room]||{}).elec ?? null}));
+  if(!state.connected){ store.set('demo_'+state.month, state.readings);
+    toast('โหมดทดลอง: บันทึกไว้ในเครื่องนี้แล้ว (ยังไม่ลง Sheet)'); return; }
+  $('btnSaveReadings').disabled=true; toast('กำลังบันทึก…');
+  try{
+    const r = await apiPost({action:'saveReadings', month:state.month, readings:rows});
+    toast(r.ok? 'บันทึกมิเตอร์ลง Google Sheet แล้ว ✓' : 'ผิดพลาด: '+r.error);
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  $('btnSaveReadings').disabled=false;
+}
+/* ================= แท็บออกบิล ================= */
+function refreshBillForm(){
+  const sel = $('billRoom'); const keep = sel.value;
+  sel.innerHTML = state.rooms.map(r=>`<option value="${r.room}">ห้อง ${r.room}${r.tenant? ' — '+r.tenant:''}</option>`).join('');
+  if(keep && [...sel.options].some(o=>o.value===keep)) sel.value = keep;
+  loadRoomIntoForm();
+}
+function loadRoomIntoForm(){
+  const rm = state.rooms.find(r=>r.room===$('billRoom').value) || {};
+  $('fRent').value    = rm.rent ?? 0;
+  $('fCommon').value  = rm.common ?? state.settings.commonFee;
+  $('fGarbage').value = rm.garbage ?? state.settings.garbageFee;
+  $('fPhone').value   = rm.phone ?? 0;
+  $('fParking').value = rm.parking ?? 0;
+  if(!$('fDue').value){
+    const [y,m]=state.month.split('-').map(Number);
+    $('fDue').value = new Date(y, m-1, 5).toISOString().slice(0,10); // ทุกวันที่ 5
+  }
+  renderBill();
+}
+
+function billData(room){
+  const rm = state.rooms.find(r=>r.room===room)||{};
+  const single = room===$('billRoom').value;    // ถ้าเป็นห้องที่เลือกอยู่ ใช้ค่าจากฟอร์ม
+  const num = id => Number($(id).value)||0;
+  const wU = unitsOf(room,'water'), eU = unitsOf(room,'elec');
+  const prev = state.prevReadings[room]||{}, cur = state.readings[room]||{};
+  const items = [
+    {name:'ค่าเช่าห้อง', amt: single? num('fRent') : (rm.rent||0)},
+    {name:'ค่าน้ำประปา', p:prev.water, c:cur.water, u:wU, amt:(wU||0)*state.settings.waterRate},
+    {name:'ค่าไฟฟ้า',    p:prev.elec,  c:cur.elec,  u:eU, amt:(eU||0)*state.settings.elecRate},
+    {name:'ค่าส่วนกลาง', amt: single? num('fCommon') : (rm.common ?? state.settings.commonFee)},
+    {name:'ค่าขยะ',      amt: single? num('fGarbage') : (rm.garbage ?? state.settings.garbageFee)},
+    {name:'ค่าโทรศัพท์', amt: single? num('fPhone') : (rm.phone||0), hideIfZero:true},
+    {name:'ค่าที่จอดรถ', amt: single? num('fParking') : (rm.parking||0), hideIfZero:true},
+    {name:'ยอดค้างชำระเดิม', amt: single? num('fArrears') : 0, hideIfZero:true},
+  ];
+  const total = items.reduce((s,i)=>s+i.amt, 0);
+  const [y,m] = state.month.split('-');
+  return {room, tenant:rm.tenant||'', items, total,
+    no:`INV-${+y+543}${m}-${room}`, due:$('fDue').value};
+}
+
+function renderBill(room){
+  const d = billData(room || $('billRoom').value);
+  $('bpNo').textContent = 'เลขที่ '+d.no;
+  $('bpRoom').textContent = d.room;
+  $('bpTenant').textContent = d.tenant;
+  $('bpMonth').textContent = thaiMonth(state.month);
+  $('bpRows').innerHTML = d.items.map(i=>{
+    if(i.hideIfZero && !i.amt) return '';
+    const meter = i.u!=null || i.p!=null;
+    return `<tr><td>${i.name}</td><td>${meter?(i.p??'—'):''}</td><td>${meter?(i.c??'—'):''}</td>
+      <td>${i.u!=null? i.u : ''}</td><td>${fmt(i.amt)}</td></tr>`;
+  }).join('');
+  $('bpTotal').textContent = fmt(d.total)+' บาท';
+  $('bpDue').textContent = thaiDate(d.due);
+  const now = new Date();
+  $('bpIssue').textContent = now.getDate()+' '+THAI_MONTHS[now.getMonth()]+' '+(now.getFullYear()+543);
+  $('bpPayNote').textContent = state.settings.payNote||'';
+  return d;
+}
+
+/* ---------- ส่งออก PNG / PDF ---------- */
+async function captureBill(){
+  return html2canvas($('billPaper'), {scale:2.5, backgroundColor:'#ffffff', useCORS:true});
+}
+async function downloadPNG(){
+  const d = renderBill();
+  const canvas = await captureBill();
+  const a = document.createElement('a');
+  a.download = `บิล_${d.room}_${state.month}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click(); toast('บันทึกภาพ PNG แล้ว ✓');
+}
+function canvasToPdfPage(pdf, canvas, addNew){
+  if(addNew) pdf.addPage();
+  const pw = pdf.internal.pageSize.getWidth();
+  const ph = pdf.internal.pageSize.getHeight();
+  const ratio = canvas.height / canvas.width;
+  let w = pw - 20, h = w * ratio;
+  if(h > ph - 20){ h = ph - 20; w = h / ratio; }
+  pdf.addImage(canvas.toDataURL('image/jpeg', .95), 'JPEG', (pw-w)/2, 10, w, h);
+}
+async function downloadPDF(){
+  const d = renderBill();
+  const canvas = await captureBill();
+  const pdf = new jspdf.jsPDF({unit:'mm', format:'a5'});
+  canvasToPdfPage(pdf, canvas, false);
+  pdf.save(`บิล_${d.room}_${state.month}.pdf`); toast('บันทึก PDF แล้ว ✓');
+}
+async function downloadAllPDF(){
+  toast('กำลังสร้างบิลทุกห้อง…'); $('btnAllPDF').disabled = true;
+  const keep = $('billRoom').value;
+  const pdf = new jspdf.jsPDF({unit:'mm', format:'a5'});
+  for(let i=0;i<state.rooms.length;i++){
+    const room = state.rooms[i].room;
+    $('billRoom').value = room; loadRoomIntoForm(); renderBill(room);
+    await new Promise(r=>setTimeout(r,60));  // ให้ DOM วาดก่อน
+    const canvas = await captureBill();
+    canvasToPdfPage(pdf, canvas, i>0);
+  }
+  pdf.save(`บิลรวมทุกห้อง_${state.month}.pdf`);
+  $('billRoom').value = keep; loadRoomIntoForm();
+  $('btnAllPDF').disabled = false; toast('สร้าง PDF รวม 8 ห้องแล้ว ✓');
+}
+async function saveBillToSheet(){
+  if(!state.connected){ toast('ยังไม่ได้เชื่อมต่อ Google Sheet'); return; }
+  const d = renderBill();
+  const flat = {}; d.items.forEach(i=>flat[i.name]=i.amt);
+  try{
+    const r = await apiPost({action:'saveBill', month:state.month,
+      bill:{room:d.room, no:d.no, due:d.due, total:d.total, items:flat}});
+    toast(r.ok? 'บันทึกยอดบิลลง Sheet แล้ว ✓' : 'ผิดพลาด: '+r.error);
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+}
+
+/* ================= แท็บตั้งค่า ================= */
+function fillSettingsForm(){
+  $('setApiUrl').value = state.apiUrl;
+  $('setWaterRate').value = state.settings.waterRate;
+  $('setElecRate').value  = state.settings.elecRate;
+  $('setCommon').value    = state.settings.commonFee;
+  $('setGarbage').value   = state.settings.garbageFee;
+  $('setPayNote').value   = state.settings.payNote||'';
+}
+function readSettingsForm(){
+  state.settings.waterRate = Number($('setWaterRate').value)||0;
+  state.settings.elecRate  = Number($('setElecRate').value)||0;
+  state.settings.commonFee = Number($('setCommon').value)||0;
+  state.settings.garbageFee= Number($('setGarbage').value)||0;
+  state.settings.payNote   = $('setPayNote').value;
+  store.set('settings', state.settings);
+}
+
+/* ================= เริ่มต้น ================= */
+document.querySelectorAll('nav.tabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tabpage').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); $('page-'+b.dataset.tab).classList.add('active');
+    if(b.dataset.tab==='bill') renderBill();
+  });
+});
+$('monthInput').value = state.month;
+$('monthInput').addEventListener('change', async e=>{
+  state.month = e.target.value; $('fDue').value='';
+  await loadMonth(); renderMeterGrid(); loadRoomIntoForm();
+});
+$('btnSaveReadings').addEventListener('click', saveReadings);
+$('billRoom').addEventListener('change', loadRoomIntoForm);
+['fRent','fArrears','fCommon','fGarbage','fPhone','fParking','fDue']
+  .forEach(id=>$(id).addEventListener('input', ()=>renderBill()));
+$('btnPNG').addEventListener('click', downloadPNG);
+$('btnPDF').addEventListener('click', downloadPDF);
+$('btnAllPDF').addEventListener('click', downloadAllPDF);
+$('btnPrint').addEventListener('click', ()=>{ renderBill(); window.print(); });
+$('btnSaveBill').addEventListener('click', saveBillToSheet);
+$('btnConnect').addEventListener('click', ()=>{
+  state.apiUrl = $('setApiUrl').value.trim(); store.set('apiUrl', state.apiUrl); connect();
+});
+$('btnSaveLocal').addEventListener('click', ()=>{ readSettingsForm(); renderBill(); toast('บันทึกอัตราในเครื่องแล้ว ✓'); });
+$('btnSaveRemote').addEventListener('click', async ()=>{
+  readSettingsForm(); renderBill();
+  if(!state.connected){ toast('ยังไม่ได้เชื่อมต่อ Google Sheet'); return; }
+  try{ const r = await apiPost({action:'saveSettings', settings:state.settings});
+    toast(r.ok? 'บันทึกอัตราขึ้น Sheet แล้ว ✓':'ผิดพลาด: '+r.error);
+  }catch(e){ toast('บันทึกไม่สำเร็จ'); }
+});
+
+(async function init(){
+  fillSettingsForm();
+  await loadMonth();
+  renderMeterGrid();
+  refreshBillForm();
+  if(state.apiUrl) connect();
+})();
+</script>
+</body>
+</html>
