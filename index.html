@@ -105,29 +105,56 @@ table.tbl tr:hover td{background:#f7f9fb}
 .fields-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* ---------- ใบแจ้งยอด ---------- */
-.bill-stage{display:flex;justify-content:center;align-items:flex-start;overflow:auto}
-#billPaper{width:420px;background:#fff;color:#12233a;padding:24px 28px;border:1px solid var(--line);
-  font-family:'Sarabun',sans-serif;box-shadow:0 4px 18px rgba(27,42,65,.10)}
-#billPaper .bp-top{text-align:center;border-bottom:2.5px solid #12233a;padding-bottom:10px}
-#billPaper .bp-apt{font-size:21px;font-weight:700;letter-spacing:.5px}
-#billPaper .bp-apt small{display:block;font-size:11px;font-weight:400;color:#5b6b7f;letter-spacing:2px;margin-top:1px}
-#billPaper .bp-wifi{font-size:12.5px;margin-top:6px;color:#12233a}
-#billPaper .bp-tel{font-size:12.5px;color:#12233a}
-#billPaper .bp-docline{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0 0}
-#billPaper .bp-docline .t{font-size:15px;font-weight:700}
-#billPaper .bp-docline .n{font-size:11.5px;color:#5b6b7f;font-variant-numeric:tabular-nums}
-#billPaper .bp-meta{display:flex;justify-content:space-between;padding:7px 0 9px;font-size:13px;border-bottom:1px dashed #b9c3d0}
-#billPaper table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
-#billPaper th{font-size:11px;color:#5b6b7f;font-weight:600;text-align:right;padding:7px 2px 5px;border-bottom:1px solid #d7dee8}
-#billPaper th:first-child{text-align:left}
-#billPaper td{padding:6.5px 2px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid #eef2f6}
-#billPaper td:first-child{text-align:left}
-#billPaper .bp-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;
-  background:#12233a;color:#fff;padding:10px 12px;border-radius:6px}
-#billPaper .bp-total b{font-size:19px;font-variant-numeric:tabular-nums}
-#billPaper .bp-foot{margin-top:12px;font-size:12.5px;color:#39485c;text-align:left}
-#billPaper .bp-min{font-size:10.5px;color:#5b6b7f;margin-top:5px}
-#billPaper .bp-pay{margin-top:8px;border-top:1px dashed #b9c3d0;padding-top:8px;font-size:11.5px;color:#5b6b7f;white-space:pre-line}
+.bill-stage{display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:4px 0 18px}
+#billPaper{
+  width:680px;background:#fff;color:#12233a;padding:26px 34px;border:1px solid #d8e0ea;border-radius:2px;
+  font-family:'Sarabun',sans-serif;box-shadow:0 8px 28px rgba(27,42,65,.12);line-height:1.35
+}
+#billPaper .bp-top{text-align:center;padding-bottom:16px;border-bottom:none}
+#billPaper .bp-logo{width:42px;height:34px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;color:#12233a}
+#billPaper .bp-logo svg{width:42px;height:34px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#billPaper .bp-apt{font-size:27px;line-height:1.1;font-weight:700;letter-spacing:.3px;color:#12233a}
+#billPaper .bp-apt small{display:block;font-size:12px;font-weight:500;color:#40506a;letter-spacing:3.2px;margin-top:4px}
+#billPaper .bp-orn{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px auto 8px;color:#12233a}
+#billPaper .bp-orn:before,#billPaper .bp-orn:after{content:'';display:block;width:72px;height:1px;background:#12233a;opacity:.65}
+#billPaper .bp-orn span{width:7px;height:7px;background:#12233a;transform:rotate(45deg);display:block}
+#billPaper .bp-contact{display:flex;justify-content:center;gap:20px;align-items:center;font-size:13.5px;color:#12233a;flex-wrap:wrap}
+#billPaper .bp-contact b{font-weight:700}
+#billPaper .bp-invoice-card{position:relative;border:1px solid #d7dee8;border-radius:12px;margin-top:10px;padding:52px 18px 16px;background:#fbfcfe}
+#billPaper .bp-title-pill{position:absolute;left:14px;top:12px;background:#e7eef6;color:#1f3b58;font-size:18px;font-weight:700;line-height:1;padding:8px 16px 9px 16px;border-radius:10px;box-shadow:none}
+#billPaper .bp-docno{position:absolute;right:18px;top:16px;font-size:12.5px;color:#12233a;font-variant-numeric:tabular-nums}
+#billPaper .bp-meta-grid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:stretch}
+#billPaper .bp-left-info{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:10px;row-gap:9px;align-items:start;min-width:0}
+#billPaper .bp-icon{width:31px;height:31px;border-radius:50%;background:#eef2f6;display:flex;align-items:center;justify-content:center;font-size:16px;color:#12233a;flex:0 0 auto}
+#billPaper .bp-label{font-size:11.5px;color:#5b6b7f;font-weight:600;margin-bottom:1px}
+#billPaper .bp-room-line{font-size:17px;font-weight:700;color:#12233a;white-space:normal;overflow-wrap:anywhere}
+#billPaper .bp-room-line small{font-size:13px;font-weight:500;color:#5b6b7f}
+#billPaper .bp-tenant-name{font-size:14.5px;font-weight:600;color:#12233a;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.35;border-bottom:1px dashed #c4cfdd;padding-bottom:6px;min-height:25px}
+#billPaper .bp-month-box{border-left:1px solid #d7dee8;padding-left:16px;display:flex;align-items:center;gap:10px;min-width:0}
+#billPaper .bp-month-text{min-width:0}
+#billPaper .bp-month-text .bp-label{margin-bottom:2px}
+#billPaper .bp-month-text b{font-size:19px;line-height:1.2;color:#12233a;white-space:normal;word-break:keep-all}
+#billPaper table{width:100%;border-collapse:separate;border-spacing:0;margin-top:16px;font-size:13.5px;border:1px solid #dfe6ef;border-radius:8px;overflow:hidden}
+#billPaper th{background:#12233a;color:#fff;font-size:12px;font-weight:600;text-align:right;padding:10px 8px;border-bottom:none;white-space:nowrap}
+#billPaper th:first-child{text-align:left;padding-left:14px}
+#billPaper td{padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid #edf1f6;color:#12233a;background:#fff}
+#billPaper tr:last-child td{border-bottom:none}
+#billPaper td:first-child{text-align:left;padding-left:14px;font-weight:500}
+#billPaper .bp-total{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;margin-top:14px;background:#12233a;color:#fff;padding:13px 16px;border-radius:8px;box-shadow:0 5px 12px rgba(18,35,58,.16)}
+#billPaper .bp-total:before{content:'💼';width:34px;height:34px;border:1px solid rgba(255,255,255,.45);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px}
+#billPaper .bp-total span{font-size:18px;font-weight:700;border-left:1px solid rgba(255,255,255,.35);padding-left:14px}
+#billPaper .bp-total b{font-size:28px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+#billPaper .bp-foot{margin-top:12px;background:#f6f8fb;border:1px solid #dbe3ee;border-radius:8px;padding:10px 13px;font-size:15px;color:#12233a;text-align:left;font-weight:500}
+#billPaper .bp-foot:before{content:'📅';margin-right:8px}
+#billPaper .bp-min{font-size:11px;color:#5b6b7f;margin-top:7px;text-align:left}
+#billPaper .bp-pay{margin-top:14px;border-top:1px dashed #c7d0dd;padding:12px 4px 0 42px;font-size:12.5px;color:#39485c;white-space:pre-line;position:relative;line-height:1.45}
+#billPaper .bp-pay:before{content:'🏦';position:absolute;left:7px;top:10px;width:25px;height:25px;border-radius:50%;background:#eef2f6;display:flex;align-items:center;justify-content:center;font-size:14px}
+@media(max-width:760px){
+  #billPaper{width:100%;padding:22px 18px}
+  #billPaper .bp-meta-grid{grid-template-columns:1fr}
+  #billPaper .bp-month-box{border-left:none;border-top:1px solid #d7dee8;padding-left:0;padding-top:12px;margin-top:10px}
+}
+
 
 /* ---------- ประวัติบิล ---------- */
 .hist-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eef2f6;font-size:13.5px}
@@ -272,22 +299,48 @@ table.tbl tr:hover td{background:#f7f9fb}
       <!-- ===== ตัวใบแจ้งยอด ===== -->
       <div id="billPaper">
         <div class="bp-top">
+          <div class="bp-logo" aria-hidden="true">
+            <svg viewBox="0 0 48 38">
+              <path d="M8 34h32M15 34V8h18v26M7 34V18h8M33 34V16h8"/>
+              <path d="M20 14h3M27 14h3M20 20h3M27 20h3M20 26h3M27 26h3"/>
+            </svg>
+          </div>
           <div class="bp-apt">กนกรัศม์<small>KANOKRAS APARTMENT</small></div>
-          <div class="bp-wifi">Wifi Password: <b id="bpWifi">8484848484</b></div>
-          <div class="bp-tel">โทร <span id="bpTel">061-145-6242</span></div>
+          <div class="bp-orn"><span></span></div>
+          <div class="bp-contact">
+            <span>📶 Wifi Password: <b id="bpWifi">8484848484</b></span>
+            <span>☎ โทร <span id="bpTel">061-145-6242</span></span>
+          </div>
         </div>
-        <div class="bp-docline">
-          <span class="t">ใบแจ้งยอด</span>
-          <span class="n" id="bpNo">เลขที่ —</span>
+
+        <div class="bp-invoice-card">
+          <div class="bp-title-pill">ใบแจ้งยอด</div>
+          <div class="bp-docno" id="bpNo">เลขที่ —</div>
+          <div class="bp-meta-grid">
+            <div class="bp-left-info">
+              <div class="bp-icon">⌂</div>
+              <div>
+                <div class="bp-room-line">ห้อง <span id="bpRoom">—</span> <small id="bpRoomType"></small></div>
+              </div>
+              <div class="bp-icon">👤</div>
+              <div>
+                <div class="bp-label">ชื่อผู้เช่า</div>
+                <div class="bp-tenant-name" id="bpTenant">—</div>
+              </div>
+            </div>
+            <div class="bp-month-box">
+              <div class="bp-icon">📅</div>
+              <div class="bp-month-text">
+                <div class="bp-label">ประจำเดือน</div>
+                <b id="bpMonth">—</b>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="bp-meta">
-          <span>ห้อง <b id="bpRoom">—</b> <span id="bpRoomType" style="color:#5b6b7f;font-size:12px"></span>
-            <span id="bpTenant" style="color:#5b6b7f;font-size:12px"></span></span>
-          <span>ประจำเดือน <b id="bpMonth">—</b></span>
-        </div>
+
         <table>
           <thead><tr>
-            <th>รายการ</th><th>ครั้งก่อน</th><th>ครั้งหลัง</th><th>หน่วย</th><th>จำนวนเงิน</th>
+            <th>รายการ</th><th>ครั้งก่อน</th><th>ครั้งหลัง</th><th>หน่วย</th><th>จำนวนเงิน (บาท)</th>
           </tr></thead>
           <tbody id="bpRows"></tbody>
         </table>
@@ -961,7 +1014,7 @@ function renderBill(room){
   $('bpNo').textContent = 'เลขที่ '+d.no;
   $('bpRoom').textContent = d.room;
   $('bpRoomType').textContent = '('+d.type+')';
-  $('bpTenant').textContent = d.tenant? ' · '+d.tenant : '';
+  $('bpTenant').textContent = d.tenant || '—';
   $('bpMonth').textContent = thaiMonth(state.month);
   $('bpWifi').textContent = state.settings.wifi || '';
   $('bpTel').textContent = state.settings.contactPhone || '';
