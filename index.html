@@ -389,13 +389,15 @@ table.tbl tr:hover td{background:#f7f9fb}
   
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-      <h2 style="margin:0">รายการบิล</h2>
-      <select id="billsFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
-        <option value="month" selected>เฉพาะเดือนที่เลือก</option>
-        <option value="all">ทุกเดือน</option>
-        <option value="unpaid">ค้างชำระ/รอชำระทั้งหมด</option>
-      </select>
-    </div>
+<h2 style="margin:0">รายการบิล</h2>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+  <button class="btn btn-primary" id="btnSaveAllBills">💾 บันทึกบิลทุกห้องของเดือนนี้</button>
+  <select id="billsFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
+    <option value="month" selected>เฉพาะเดือนที่เลือก</option>
+    <option value="all">ทุกเดือน</option>
+    <option value="unpaid">ค้างชำระ/รอชำระทั้งหมด</option>
+  </select>
+</div>
     <div class="tbl-wrap" style="margin-top:12px">
       <table class="tbl">
         <thead><tr>
@@ -1133,7 +1135,79 @@ async function saveBillToSheet(){
     toast(state.connected? 'บันทึกยอดบิลลง Sheet แล้ว ✓' : 'โหมดทดลอง: บันทึกบิลในเครื่องแล้ว ✓');
   }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
 }
+async function saveAllBillsToSheet(){
+  const btn = $('btnSaveAllBills');
+  if(btn) btn.disabled = true;
 
+  const keepRoom = $('billRoom').value;
+  const officeRooms = ['101', '102'];
+
+  toast('กำลังบันทึกบิลทุกห้องของเดือนนี้…');
+
+  let saved = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  try{
+    for(const rm of state.rooms){
+      const room = String(rm.room);
+      const tenant = activeTenantOf(room);
+
+      // ข้ามห้องออฟฟิศ 101, 102
+      if(officeRooms.includes(room)){
+        skipped++;
+        continue;
+      }
+
+      // ข้ามห้องว่าง
+      if(!tenant){
+        skipped++;
+        continue;
+      }
+
+      try{
+        const d = billData(room);
+        const flat = {};
+        d.items.forEach(i => flat[i.key || i.name] = i.amt);
+
+        await api('savebill', {}, {
+          month: state.month,
+          bill: {
+            room: d.room,
+            no: d.no,
+            due: d.due,
+            total: d.total,
+            items: flat
+          }
+        });
+
+        saved++;
+
+      }catch(err){
+        console.error('save bill failed room', room, err);
+        failed++;
+      }
+    }
+
+    await loadBills();
+
+    if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
+      $('billRoom').value = keepRoom;
+    }
+
+    renderBillsTable();
+    renderInvoiceSummary();
+    renderBillHistory();
+    renderDashboard();
+
+    toast(`บันทึกบิลแล้ว ${saved} ห้อง, ข้าม ${skipped} ห้อง${failed ? ', ล้มเหลว '+failed+' ห้อง' : ''} ✓`);
+
+  }catch(e){
+    toast('บันทึกบิลทุกห้องไม่สำเร็จ: ' + e.message);
+  }
+
+  if(btn) btn.disabled = false;
+}
 /* ================= แท็บรายการบิล (★ ข้อ 11) ================= */
 function dispStatus(b){
   if(b.status==='ชำระแล้ว' || b.status==='ยกเลิก') return b.status;
@@ -1148,12 +1222,20 @@ function billOfSelectedMonth(room){
   );
 }
 
+function billOfSelectedMonth(room){
+  return state.bills.find(b =>
+    b.month === state.month &&
+    String(b.room) === String(room) &&
+    b.status !== 'ยกเลิก'
+  );
+}
+
 function renderInvoiceSummary(){
   if(!$('invoiceSummaryRows')) return;
 
   $('invoiceSummaryMonth').textContent = thaiMonth(state.month);
 
-  const excludeRooms = ['101', '102'];
+  const officeRooms = ['101', '102'];
   let sum = 0;
 
   const rows = state.rooms
@@ -1164,28 +1246,31 @@ function renderInvoiceSummary(){
       const tenant = activeTenantOf(room);
       const occupied = !!tenant;
       const bill = billOfSelectedMonth(room);
+      const isOffice = officeRooms.includes(room);
 
-      const isExcludedFromTotal = excludeRooms.includes(room) || !occupied;
+      let amountHtml = '';
 
-      let amountHtml = '<span class="hint">ยังไม่ออกบิล</span>';
+      if(isOffice){
+        // ห้อง 101-102 เป็นออฟฟิศ: ไม่แสดงยอดจ่าย และไม่รวมเงิน
+        amountHtml = '---';
 
-      if(!occupied){
-        amountHtml = '<span class="hint">—</span>';
+      } else if(!occupied){
+        // ห้องว่าง: ไม่แสดงยอดจ่าย และไม่รวมเงิน
+        amountHtml = '---';
+
       } else if(bill){
+        // ห้องมีคนอยู่และมีบิลแล้ว: แสดงยอดและนำไปรวม
         amountHtml = fmt(bill.total) + ' บาท';
+        sum += Number(bill.total) || 0;
 
-        if(!isExcludedFromTotal){
-          sum += Number(bill.total) || 0;
-        }
+      } else {
+        // ห้องมีคนอยู่ แต่ยังไม่ได้บันทึกบิล
+        amountHtml = '<span class="hint">ยังไม่ออกบิล</span>';
       }
-
-      const excludeNote = excludeRooms.includes(room)
-        ? '<span class="hint"> ไม่รวม</span>'
-        : '';
 
       return `
         <tr>
-          <td><b>${room}</b>${excludeNote}</td>
+          <td><b>${room}</b></td>
           <td>${r.type || typeOf(room) || '-'}</td>
           <td>
             <span class="badge ${occupied ? 'green' : 'gray'}">
@@ -1241,6 +1326,7 @@ function markPaid(m,r){ setStatus(m,r,'ชำระแล้ว'); }
 function cancelBill(m,r){ if(confirm('ยกเลิกบิลห้อง '+r+' ?')) setStatus(m,r,'ยกเลิก'); }
 function unpayBill(m,r){ setStatus(m,r,'รอชำระ'); }
 $('billsFilter').addEventListener('change', renderBillsTable);
+$('btnSaveAllBills').addEventListener('click', saveAllBillsToSheet);
 
 /* ================= แท็บตั้งค่า ================= */
 function fillSettingsForm(){
