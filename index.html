@@ -354,6 +354,39 @@ table.tbl tr:hover td{background:#f7f9fb}
 
 <!-- ================= แท็บ: รายการบิล ================= -->
 <section class="tabpage" id="page-bills">
+<div class="card">
+  <h2>สรุปใบแจ้งยอดเดือน <span id="invoiceSummaryMonth"></span></h2>
+  <p class="hint">
+    รวมเงินเฉพาะห้องที่มีผู้พัก และไม่รวมห้อง 101, 102 และห้องว่าง
+  </p>
+
+  <div class="tbl-wrap" style="margin-top:12px">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>ห้อง</th>
+          <th>ประเภท</th>
+          <th>สถานะ</th>
+          <th>ชื่อ</th>
+          <th>นามสกุล</th>
+          <th style="text-align:right">ยอดจ่าย</th>
+        </tr>
+      </thead>
+      <tbody id="invoiceSummaryRows"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="text-align:right;font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">
+            รวมเงิน
+          </td>
+          <td id="invoiceSummaryTotal" class="num" style="font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">
+            0.00 บาท
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+  
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <h2 style="margin:0">รายการบิล</h2>
@@ -633,7 +666,7 @@ async function loadBills(){
 }
 function renderAll(){
   fillSettingsForm(); renderMeterGrid(); refreshBillForm();
-  renderTenants(); renderBillsTable(); renderDashboard(); renderMeterPhotos();
+  renderTenants(); renderBillsTable(); renderInvoiceSummary(); renderDashboard(); renderMeterPhotos();
 }
 
 /* ================= การคำนวณหน่วย (★ ขั้นต่ำ น้ำ 2 / ไฟ 10) ================= */
@@ -1096,7 +1129,7 @@ async function saveBillToSheet(){
     await api('savebill', {}, {month:state.month,
       bill:{room:d.room, no:d.no, due:d.due, total:d.total, items:flat}});
     await loadBills();
-    renderBillsTable(); renderBillHistory(); renderDashboard();
+   renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
     toast(state.connected? 'บันทึกยอดบิลลง Sheet แล้ว ✓' : 'โหมดทดลอง: บันทึกบิลในเครื่องแล้ว ✓');
   }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
 }
@@ -1107,6 +1140,69 @@ function dispStatus(b){
   if(b.due && b.due < todayISO()) return 'ค้างชำระ';
   return 'รอชำระ';
 }
+function billOfSelectedMonth(room){
+  return state.bills.find(b =>
+    b.month === state.month &&
+    String(b.room) === String(room) &&
+    b.status !== 'ยกเลิก'
+  );
+}
+
+function renderInvoiceSummary(){
+  if(!$('invoiceSummaryRows')) return;
+
+  $('invoiceSummaryMonth').textContent = thaiMonth(state.month);
+
+  const excludeRooms = ['101', '102'];
+  let sum = 0;
+
+  const rows = state.rooms
+    .slice()
+    .sort((a,b) => String(a.room).localeCompare(String(b.room), 'th', {numeric:true}))
+    .map(r => {
+      const room = String(r.room);
+      const tenant = activeTenantOf(room);
+      const occupied = !!tenant;
+      const bill = billOfSelectedMonth(room);
+
+      const isExcludedFromTotal = excludeRooms.includes(room) || !occupied;
+
+      let amountHtml = '<span class="hint">ยังไม่ออกบิล</span>';
+
+      if(!occupied){
+        amountHtml = '<span class="hint">—</span>';
+      } else if(bill){
+        amountHtml = fmt(bill.total) + ' บาท';
+
+        if(!isExcludedFromTotal){
+          sum += Number(bill.total) || 0;
+        }
+      }
+
+      const excludeNote = excludeRooms.includes(room)
+        ? '<span class="hint"> ไม่รวม</span>'
+        : '';
+
+      return `
+        <tr>
+          <td><b>${room}</b>${excludeNote}</td>
+          <td>${r.type || typeOf(room) || '-'}</td>
+          <td>
+            <span class="badge ${occupied ? 'green' : 'gray'}">
+              ${occupied ? 'มีคนอยู่' : 'ว่าง'}
+            </span>
+          </td>
+          <td>${tenant ? (tenant.firstName || '') : '-'}</td>
+          <td>${tenant ? (tenant.lastName || '') : '-'}</td>
+          <td class="num">${amountHtml}</td>
+        </tr>
+      `;
+    });
+
+  $('invoiceSummaryRows').innerHTML = rows.join('');
+  $('invoiceSummaryTotal').textContent = fmt(sum) + ' บาท';
+}
+  
 function renderBillsTable(){
   const f = $('billsFilter').value;
   let list = state.bills.slice();
@@ -1137,7 +1233,7 @@ async function setStatus(month, room, status){
     await api('setbillstatus', {}, {month, room, status, paidDate: status==='ชำระแล้ว'? todayISO():''});
     const b = state.bills.find(x=>x.month===month&&String(x.room)===String(room));
     if(b){ b.status=status; b.paidDate = status==='ชำระแล้ว'? todayISO():''; }
-    renderBillsTable(); renderBillHistory(); renderDashboard();
+    renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
     toast(status==='ชำระแล้ว'? 'บันทึกว่าชำระแล้ว ✓' : 'อัปเดตสถานะแล้ว ✓');
   }catch(e){ toast('อัปเดตไม่สำเร็จ: '+e.message); }
 }
@@ -1192,7 +1288,7 @@ $('monthInput').value = state.month;
 $('monthInput').addEventListener('change', async e=>{
   state.month = e.target.value;
   await loadMonth();
-  renderMeterGrid(); loadRoomIntoForm(); renderDashboard(); renderBillsTable(); renderMeterPhotos();
+  renderMeterGrid(); loadRoomIntoForm(); renderDashboard();renderInvoiceSummary(); renderBillsTable(); renderMeterPhotos();
 });
 $('btnSaveReadings').addEventListener('click', saveReadings);
 $('billRoom').addEventListener('change', loadRoomIntoForm);
