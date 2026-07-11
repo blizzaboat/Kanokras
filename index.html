@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   --ink:#1b2a41; --teal:#0e7c66; --teal-dark:#0a5f4e; --amber:#b45309; --red:#b3261e;
@@ -284,7 +285,8 @@ table.tbl tr:hover td{background:#f7f9fb}
           <button class="btn btn-ghost" id="btnPrint">🖨 พิมพ์</button>
         </div>
         <div class="btnrow">
-          <button class="btn btn-ghost" id="btnAllPDF">📚 PDF รวมทุกห้อง</button>
+          <button class="btn btn-ghost" id="btnAllPNG">🖼 PNG ทุกห้อง (ZIP)</button>
+          <button class="btn btn-ghost" id="btnAllPDF">📚 PDF รวมทุกห้อง 2 ใบ/หน้า</button>
           <button class="btn btn-ghost" id="btnSaveBill">💾 บันทึกยอดบิลลง Sheet</button>
         </div>
       </div>
@@ -1109,20 +1111,160 @@ async function downloadPDF(){
   canvasToPdfPage(pdf, canvas, false);
   pdf.save(`บิล_${d.room}_${state.month}.pdf`); toast('บันทึก PDF แล้ว ✓');
 }
-async function downloadAllPDF(){
-  toast('กำลังสร้างบิลทุกห้อง…'); $('btnAllPDF').disabled = true;
-  const keep = $('billRoom').value;
-  const pdf = new jspdf.jsPDF({unit:'mm', format:'a5'});
-  for(let i=0;i<state.rooms.length;i++){
-    const room = state.rooms[i].room;
-    $('billRoom').value = room; loadRoomIntoForm(); renderBill(room);
-    await sleep(60);
-    const canvas = await captureBill();
-    canvasToPdfPage(pdf, canvas, i>0);
+function exportRooms(){
+  const officeRooms = ['101', '102'];
+
+  return state.rooms.filter(r => {
+    const room = String(r.room);
+    const tenant = activeTenantOf(room);
+
+    // พิมพ์เฉพาะห้องที่มีผู้พัก และไม่รวมห้องออฟฟิศ 101, 102
+    return !officeRooms.includes(room) && !!tenant;
+  });
+}
+
+async function downloadAllPNGZip(){
+  if(typeof JSZip === 'undefined'){
+    toast('ยังโหลด JSZip ไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ');
+    return;
   }
-  pdf.save(`บิลรวมทุกห้อง_${state.month}.pdf`);
-  $('billRoom').value = keep; loadRoomIntoForm();
-  $('btnAllPDF').disabled = false; toast('สร้าง PDF รวมทุกห้องแล้ว ✓');
+
+  const rooms = exportRooms();
+
+  if(!rooms.length){
+    toast('ไม่มีห้องที่ต้องสร้างบิล');
+    return;
+  }
+
+  const keepRoom = $('billRoom').value;
+  const zip = new JSZip();
+
+  $('btnAllPNG').disabled = true;
+  toast('กำลังสร้างรูปบิลทุกห้อง…');
+
+  try{
+    for(let i = 0; i < rooms.length; i++){
+      const room = String(rooms[i].room);
+
+      $('billRoom').value = room;
+      loadRoomIntoForm();
+      renderBill(room);
+
+      await sleep(80);
+
+      const canvas = await captureBill();
+      const dataUrl = canvas.toDataURL('image/png');
+      const base64 = dataUrl.split(',')[1];
+
+      zip.file(`บิล_${room}_${state.month}.png`, base64, {base64:true});
+    }
+
+    const blob = await zip.generateAsync({type:'blob'});
+    const a = document.createElement('a');
+
+    a.href = URL.createObjectURL(blob);
+    a.download = `บิลทุกห้อง_${state.month}.zip`;
+    a.click();
+
+    URL.revokeObjectURL(a.href);
+
+    toast('ดาวน์โหลด PNG ทุกห้องเป็น ZIP แล้ว ✓');
+
+  }catch(e){
+    toast('สร้างรูปบิลไม่สำเร็จ: ' + e.message);
+  }
+
+  if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
+    $('billRoom').value = keepRoom;
+    loadRoomIntoForm();
+  }
+
+  $('btnAllPNG').disabled = false;
+}
+
+async function downloadAllPDF(){
+  const rooms = exportRooms();
+
+  if(!rooms.length){
+    toast('ไม่มีห้องที่ต้องสร้าง PDF');
+    return;
+  }
+
+  toast('กำลังสร้าง PDF รวมทุกห้องแบบ 2 ใบต่อหน้า…');
+  $('btnAllPDF').disabled = true;
+
+  const keepRoom = $('billRoom').value;
+
+  // A4 แนวนอน: วางบิลซ้าย-ขวา 2 ใบต่อ 1 หน้า
+  const pdf = new jspdf.jsPDF({
+    unit: 'mm',
+    format: 'a4',
+    orientation: 'landscape'
+  });
+
+  const margin = 8;
+  const gap = 6;
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+
+  const slotW = (pageW - (margin * 2) - gap) / 2;
+  const slotH = pageH - (margin * 2);
+
+  try{
+    for(let i = 0; i < rooms.length; i++){
+      const room = String(rooms[i].room);
+
+      if(i > 0 && i % 2 === 0){
+        pdf.addPage();
+      }
+
+      $('billRoom').value = room;
+      loadRoomIntoForm();
+      renderBill(room);
+
+      await sleep(80);
+
+      const canvas = await captureBill();
+      const ratio = canvas.height / canvas.width;
+
+      let w = slotW;
+      let h = w * ratio;
+
+      if(h > slotH){
+        h = slotH;
+        w = h / ratio;
+      }
+
+      const col = i % 2;
+      const slotX = margin + col * (slotW + gap);
+      const slotY = margin;
+
+      const x = slotX + (slotW - w) / 2;
+      const y = slotY + (slotH - h) / 2;
+
+      pdf.addImage(
+        canvas.toDataURL('image/jpeg', 0.95),
+        'JPEG',
+        x,
+        y,
+        w,
+        h
+      );
+    }
+
+    pdf.save(`บิลรวมทุกห้อง_2ใบต่อหน้า_${state.month}.pdf`);
+    toast('สร้าง PDF รวมแบบ 2 ใบต่อหน้าแล้ว ✓');
+
+  }catch(e){
+    toast('สร้าง PDF ไม่สำเร็จ: ' + e.message);
+  }
+
+  if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
+    $('billRoom').value = keepRoom;
+    loadRoomIntoForm();
+  }
+
+  $('btnAllPDF').disabled = false;
 }
 async function saveBillToSheet(){
   const d = renderBill();
@@ -1382,6 +1524,7 @@ $('billRoom').addEventListener('change', loadRoomIntoForm);
   .forEach(id=>$(id).addEventListener('input', ()=>renderBill()));
 $('btnPNG').addEventListener('click', downloadPNG);
 $('btnPDF').addEventListener('click', downloadPDF);
+$('btnAllPNG').addEventListener('click', downloadAllPNGZip);
 $('btnAllPDF').addEventListener('click', downloadAllPDF);
 $('btnPrint').addEventListener('click', ()=>{ renderBill(); window.print(); });
 $('btnSaveBill').addEventListener('click', saveBillToSheet);
