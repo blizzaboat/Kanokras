@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>กนกรัศม์ — ระบบบริหารหอพัก</title>
+<title>กนกรัศม์ — Apartment Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -21,13 +21,19 @@ input,select{font-family:inherit;font-size:15px}
 
 /* ---------- โครงหลัก ---------- */
 header.app{background:var(--ink);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-header.app h1{font-size:18px;font-weight:700;letter-spacing:.2px}
+header.app h1{font-size:18px;font-weight:700;letter-spacing:.2px;cursor:pointer}
 header.app .sub{font-size:12px;opacity:.75}
-.month-pick{margin-left:auto;display:flex;align-items:center;gap:8px}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.month-pick{display:flex;align-items:center;gap:8px}
 .month-pick input{border:none;border-radius:8px;padding:7px 10px;background:#2b3c56;color:#fff}
 .month-pick input::-webkit-calendar-picker-indicator{filter:invert(1)}
+#btnHome{background:#2b3c56;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:14px;font-weight:600;display:none;align-items:center;gap:6px}
+#btnHome:hover{background:#39507000;background:#3a4f6e}
 #connDot{width:9px;height:9px;border-radius:50%;background:#8a97a8;display:inline-block}
 #connDot.on{background:#3ddc97}
+
+.module{display:none}
+.module.active{display:block}
 
 nav.tabs{display:flex;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
   overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -47,6 +53,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .btn-ghost{background:#eef2f6;color:var(--ink)}
 .btn-ghost:hover{background:#e2e8f0}
 .btn-warn{background:#fdf0e5;color:var(--amber)}
+.btn-danger{background:#fdeaea;color:var(--red)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-sm{padding:5px 10px;font-size:13px;border-radius:7px}
 .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
@@ -58,6 +65,32 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .badge.gray{background:#eef2f6;color:var(--muted)}
 .badge.amber{background:#fdf0e5;color:var(--amber)}
 .badge.red{background:#fdeaea;color:var(--red)}
+.badge.type{background:#e7f0f6;color:#1f4e6b}
+.pill{font-size:11px;padding:2px 8px;border-radius:6px;background:#eef2f6;color:var(--muted)}
+
+/* ---------- หน้าหลัก (Home) ---------- */
+.home-wrap{max-width:860px;margin:0 auto;padding:34px 16px 40px}
+.home-head{text-align:center;margin-bottom:26px}
+.home-head .hh-logo{width:44px;height:38px;margin:0 auto 8px;color:var(--ink)}
+.home-head .hh-logo svg{width:44px;height:38px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.home-head h2{font-size:30px;font-weight:700;line-height:1.15}
+.home-head .en{display:block;font-size:12px;font-weight:500;letter-spacing:3.2px;color:var(--muted);margin-top:5px}
+.home-head .orn{display:flex;align-items:center;justify-content:center;gap:10px;margin:12px auto 0;color:var(--ink)}
+.home-head .orn:before,.home-head .orn:after{content:'';display:block;width:72px;height:1px;background:var(--ink);opacity:.55}
+.home-head .orn span{width:7px;height:7px;background:var(--ink);transform:rotate(45deg);display:block}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+@media(max-width:640px){.home-grid{grid-template-columns:1fr}}
+.home-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 18px;text-align:left;
+  display:flex;gap:14px;align-items:flex-start;transition:box-shadow .15s,transform .15s;box-shadow:0 1px 2px rgba(27,42,65,.05)}
+.home-card:hover{box-shadow:0 8px 22px rgba(27,42,65,.12);transform:translateY(-2px)}
+.home-card .ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:23px;flex:0 0 auto}
+.home-card.c-bill .ic{background:#e2f4ef}
+.home-card.c-ac .ic{background:#e7f0f6}
+.home-card.c-tenant .ic{background:#fdf0e5}
+.home-card.c-set .ic{background:#eef2f6}
+.home-card b{font-size:17px;display:block;margin-bottom:3px}
+.home-card small{font-size:13px;color:var(--muted);line-height:1.45;display:block}
+.home-foot{text-align:center;margin-top:26px;font-size:12.5px;color:var(--muted)}
 
 /* ---------- Dashboard ---------- */
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
@@ -66,6 +99,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .stat .l{font-size:12.5px;color:var(--muted);margin-top:2px}
 .stat.warn .v{color:var(--amber)}
 .stat.bad .v{color:var(--red)}
+.stat.good .v{color:var(--teal)}
 .alert-item{display:flex;gap:8px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;flex-wrap:wrap}
 .alert-item:last-child{border-bottom:none}
 
@@ -76,6 +110,8 @@ table.tbl th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;p
 table.tbl td{padding:8px;border-bottom:1px solid #eef2f6;white-space:nowrap}
 table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
 table.tbl tr:hover td{background:#f7f9fb}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar select,.toolbar input{border:1px solid var(--line);border-radius:8px;padding:7px 10px}
 
 /* ---------- แท็บมิเตอร์ ---------- */
 .rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
@@ -180,27 +216,67 @@ table.tbl tr:hover td{background:#f7f9fb}
 
 <header class="app">
   <div>
-    <h1>กนกรัศม์ <span id="connDot" title="สถานะการเชื่อมต่อ"></span></h1>
-    <div class="sub">ระบบบริหารหอพัก · มิเตอร์ · บิล · ผู้พัก</div>
+    <h1 onclick="showModule('home')" title="กลับหน้าหลัก">กนกรัศม์ <span id="connDot" title="สถานะการเชื่อมต่อ"></span></h1>
+    <div class="sub">Apartment Management · บิล · ล้างแอร์ · ผู้พัก</div>
   </div>
-  <div class="month-pick">
-    <label style="font-size:13px">ประจำเดือน</label>
-    <input type="month" id="monthInput">
+  <div class="hd-right">
+    <div class="month-pick" id="monthPickWrap" style="display:none">
+      <label style="font-size:13px">ประจำเดือน</label>
+      <input type="month" id="monthInput">
+    </div>
+    <button id="btnHome" onclick="showModule('home')">⌂ หน้าหลัก</button>
   </div>
 </header>
 
+<!-- ═══════════════ หน้าหลัก ═══════════════ -->
+<section class="module active" id="module-home">
+  <div class="home-wrap">
+    <div class="home-head">
+      <div class="hh-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 40">
+          <path d="M14 36V10h20v26M9 36h30M20 16h2M26 16h2M20 22h2M26 22h2M20 28h2M26 28h2M32 18h6v18M10 20h4"/>
+        </svg>
+      </div>
+      <h2>กนกรัศม์<span class="en">APARTMENT MANAGEMENT</span></h2>
+      <div class="orn"><span></span></div>
+    </div>
+    <div class="home-grid">
+      <button class="home-card c-bill" onclick="showModule('bill')">
+        <span class="ic">🧾</span>
+        <span><b>บิลค่าเช่า</b>
+        <small>จัดการมิเตอร์ · ออกบิล · ดาวน์โหลด PDF/PNG · สรุปยอดรายเดือน</small></span>
+      </button>
+      <button class="home-card c-ac" onclick="showModule('ac')">
+        <span class="ic">❄️</span>
+        <span><b>ล้างแอร์</b>
+        <small>เช็กรอบล้างแอร์ · บันทึกประวัติ · แจ้งเตือนห้องที่ถึงรอบ</small></span>
+      </button>
+      <button class="home-card c-tenant" onclick="showModule('tenant')">
+        <span class="ic">👥</span>
+        <span><b>ข้อมูลผู้พัก</b>
+        <small>เพิ่ม/แก้ไข/ย้ายออก ผู้พัก · แนบรูปบัตร · เบอร์โทร</small></span>
+      </button>
+      <button class="home-card c-set" onclick="showModule('setting')">
+        <span class="ic">⚙️</span>
+        <span><b>ตั้งค่า</b>
+        <small>API URL · ค่าไฟ ค่าน้ำ ค่าเช่า · รอบล้างแอร์ · ข้อความท้ายบิล</small></span>
+      </button>
+    </div>
+    <div class="home-foot" id="homeConnHint">ยังไม่ได้เชื่อมต่อ Google Sheet — ไปที่ ตั้งค่า เพื่อเชื่อมต่อ</div>
+  </div>
+</section>
+
+<!-- ═══════════════ โมดูล: บิลค่าเช่า ═══════════════ -->
+<section class="module" id="module-bill">
 <nav class="tabs">
   <button data-tab="dash" class="active">📊 ภาพรวม</button>
-  <button data-tab="tenant">👥 ข้อมูลผู้พัก</button>
   <button data-tab="meter">📟 บันทึกมิเตอร์</button>
   <button data-tab="bill">🧾 ออกบิล</button>
   <button data-tab="bills">📑 รายการบิล</button>
-  <button data-tab="setting">⚙️ ตั้งค่า</button>
 </nav>
-
 <main>
 
-<!-- ================= แท็บ: ภาพรวม (Dashboard) ================= -->
+<!-- ===== แท็บ: ภาพรวม ===== -->
 <section class="tabpage active" id="page-dash">
   <div class="card">
     <h2>ภาพรวมเดือน <span id="dashMonthLabel"></span></h2>
@@ -212,34 +288,7 @@ table.tbl tr:hover td{background:#f7f9fb}
   </div>
 </section>
 
-<!-- ================= แท็บ: ข้อมูลผู้พัก ================= -->
-<section class="tabpage" id="page-tenant">
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-      <h2 style="margin:0">ทะเบียนผู้พัก</h2>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="tenantFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
-          <option value="all">ทั้งหมด</option>
-          <option value="active" selected>อยู่ปัจจุบัน</option>
-          <option value="moved_out">ย้ายออก</option>
-        </select>
-        <button class="btn btn-primary" id="btnAddTenant">＋ เพิ่มผู้พักใหม่</button>
-      </div>
-    </div>
-    <div class="tbl-wrap" style="margin-top:12px">
-      <table class="tbl">
-        <thead><tr>
-          <th>ห้อง</th><th>ประเภทห้อง</th><th>ชื่อ</th><th>นามสกุล</th><th>เบอร์โทร</th>
-          <th>วันที่เข้า</th><th>วันที่ออก</th><th>สถานะ</th><th>รูปบัตร</th><th></th>
-        </tr></thead>
-        <tbody id="tenantRows"></tbody>
-      </table>
-    </div>
-    <p class="hint" style="margin-top:8px">รูปบัตรเก็บใน Google Drive โฟลเดอร์ <b>Tenant Documents/ห้อง_รหัสผู้พัก/</b> — ในชีตเก็บเฉพาะ fileId และลิงก์</p>
-  </div>
-</section>
-
-<!-- ================= แท็บ: บันทึกมิเตอร์ ================= -->
+<!-- ===== แท็บ: บันทึกมิเตอร์ ===== -->
 <section class="tabpage" id="page-meter">
   <div class="card">
     <h2>จดมิเตอร์ประจำเดือน <span id="meterMonthLabel"></span></h2>
@@ -256,7 +305,7 @@ table.tbl tr:hover td{background:#f7f9fb}
   </div>
 </section>
 
-<!-- ================= แท็บ: ออกบิล ================= -->
+<!-- ===== แท็บ: ออกบิล ===== -->
 <section class="tabpage" id="page-bill">
   <div class="bill-layout">
     <div>
@@ -297,7 +346,6 @@ table.tbl tr:hover td{background:#f7f9fb}
     </div>
 
     <div class="bill-stage">
-      <!-- ===== ตัวใบแจ้งยอด ===== -->
 <div id="billPaper">
   <div class="bp-top">
     <div class="bp-logo" aria-hidden="true">
@@ -349,57 +397,42 @@ table.tbl tr:hover td{background:#f7f9fb}
   <div class="bp-min" id="bpMinNote" style="display:none">* คิดตามหน่วยขั้นต่ำ</div>
   <div class="bp-pay" id="bpPayNote"></div>
 </div>
-      </div>
     </div>
   </div>
 </section>
 
-<!-- ================= แท็บ: รายการบิล ================= -->
+<!-- ===== แท็บ: รายการบิล ===== -->
 <section class="tabpage" id="page-bills">
 <div class="card">
   <h2>สรุปใบแจ้งยอดเดือน <span id="invoiceSummaryMonth"></span></h2>
-  <p class="hint">
-    รวมเงินเฉพาะห้องที่มีผู้พัก และไม่รวมห้อง 101, 102 และห้องว่าง
-  </p>
-
+  <p class="hint">รวมเงินเฉพาะห้องที่มีผู้พัก และไม่รวมห้อง 101, 102 และห้องว่าง</p>
   <div class="tbl-wrap" style="margin-top:12px">
     <table class="tbl">
-      <thead>
-        <tr>
-          <th>ห้อง</th>
-          <th>ประเภท</th>
-          <th>สถานะ</th>
-          <th>ชื่อ</th>
-          <th>นามสกุล</th>
-          <th style="text-align:right">ยอดจ่าย</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>ห้อง</th><th>ประเภท</th><th>สถานะ</th><th>ชื่อ</th><th>นามสกุล</th>
+        <th style="text-align:right">ยอดจ่าย</th>
+      </tr></thead>
       <tbody id="invoiceSummaryRows"></tbody>
-      <tfoot>
-        <tr>
-          <td colspan="5" style="text-align:right;font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">
-            รวมเงิน
-          </td>
-          <td id="invoiceSummaryTotal" class="num" style="font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">
-            0.00 บาท
-          </td>
-        </tr>
-      </tfoot>
+      <tfoot><tr>
+        <td colspan="5" style="text-align:right;font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">รวมเงิน</td>
+        <td id="invoiceSummaryTotal" class="num" style="font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">0.00 บาท</td>
+      </tr></tfoot>
     </table>
   </div>
 </div>
-  
+
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-<h2 style="margin:0">รายการบิล</h2>
-<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-  <button class="btn btn-primary" id="btnSaveAllBills">💾 บันทึกบิลทุกห้องของเดือนนี้</button>
-  <select id="billsFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
-    <option value="month" selected>เฉพาะเดือนที่เลือก</option>
-    <option value="all">ทุกเดือน</option>
-    <option value="unpaid">ค้างชำระ/รอชำระทั้งหมด</option>
-  </select>
-</div>
+      <h2 style="margin:0">รายการบิล</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btnSaveAllBills">💾 บันทึกบิลทุกห้องของเดือนนี้</button>
+        <select id="billsFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
+          <option value="month" selected>เฉพาะเดือนที่เลือก</option>
+          <option value="all">ทุกเดือน</option>
+          <option value="unpaid">ค้างชำระ/รอชำระทั้งหมด</option>
+        </select>
+      </div>
+    </div>
     <div class="tbl-wrap" style="margin-top:12px">
       <table class="tbl">
         <thead><tr>
@@ -412,11 +445,161 @@ table.tbl tr:hover td{background:#f7f9fb}
   </div>
 </section>
 
-<!-- ================= แท็บ: ตั้งค่า ================= -->
-<section class="tabpage" id="page-setting">
+</main>
+</section>
+
+<!-- ═══════════════ โมดูล: ข้อมูลผู้พัก ═══════════════ -->
+<section class="module" id="module-tenant">
+<main>
   <div class="card">
-    <h2>เชื่อมต่อ Google Sheet</h2>
-    <p class="hint">วาง URL ของ Apps Script Web App (ลงท้ายด้วย /exec) จากขั้นตอนในคู่มือติดตั้ง</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0">👥 ทะเบียนผู้พัก</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="tenantFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
+          <option value="all">ทั้งหมด</option>
+          <option value="active" selected>อยู่ปัจจุบัน</option>
+          <option value="moved_out">ย้ายออก</option>
+        </select>
+        <button class="btn btn-primary" id="btnAddTenant">＋ เพิ่มผู้พักใหม่</button>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr>
+          <th>ห้อง</th><th>ประเภทห้อง</th><th>ชื่อ</th><th>นามสกุล</th><th>เบอร์โทร</th>
+          <th>วันที่เข้า</th><th>วันที่ออก</th><th>สถานะ</th><th>รูปบัตร</th><th></th>
+        </tr></thead>
+        <tbody id="tenantRows"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="margin-top:8px">รูปบัตรเก็บใน Google Drive โฟลเดอร์ <b>Tenant Documents/ห้อง_รหัสผู้พัก/</b> — ในชีตเก็บเฉพาะ fileId และลิงก์</p>
+  </div>
+</main>
+</section>
+
+<!-- ═══════════════ โมดูล: ล้างแอร์ ═══════════════ -->
+<section class="module" id="module-ac">
+<nav class="tabs">
+  <button data-tab="acdash" class="active">📊 ภาพรวม</button>
+  <button data-tab="acstatus">🌡 สถานะรายห้อง</button>
+  <button data-tab="acadd">➕ บันทึกงาน</button>
+  <button data-tab="achistory">🕓 ประวัติทั้งหมด</button>
+  <button data-tab="acrooms">🚪 ห้อง / แอร์</button>
+</nav>
+<main>
+
+<!-- ===== แอร์: ภาพรวม ===== -->
+<section class="tabpage active" id="page-acdash">
+  <div class="card">
+    <h2>❄️ ภาพรวมระบบล้างแอร์</h2>
+    <div class="stat-grid" id="acStatGrid"><p class="hint">กำลังโหลด…</p></div>
+  </div>
+  <div class="card">
+    <h2>🔴 ต้องล้างด่วน (เกินกำหนด / ใกล้ครบกำหนด)</h2>
+    <div id="acAlertList"><p class="hint">กำลังโหลด…</p></div>
+  </div>
+</section>
+
+<!-- ===== แอร์: สถานะรายห้อง ===== -->
+<section class="tabpage" id="page-acstatus">
+  <div class="card">
+    <div class="toolbar">
+      <select id="acFStatus">
+        <option value="">ทุกสถานะ</option>
+        <option value="เกินกำหนด">เกินกำหนด</option>
+        <option value="ใกล้ครบกำหนด">ใกล้ครบกำหนด</option>
+        <option value="ปกติ">ปกติ</option>
+      </select>
+      <select id="acFType"><option value="">ทุกประเภท</option></select>
+      <span class="hint" id="acStatusCount"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr>
+          <th>ห้อง</th><th>ประเภท</th><th>ติดตั้งเครื่อง</th><th>ล้างล่าสุด</th>
+          <th>ครบกำหนดถัดไป</th><th>เหลือ</th><th>สถานะ</th><th></th>
+        </tr></thead>
+        <tbody id="acStatusBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== แอร์: บันทึกงาน ===== -->
+<section class="tabpage" id="page-acadd">
+  <div class="card">
+    <h2>➕ บันทึกงานแอร์</h2>
+    <div class="fields-2">
+      <div class="field"><label>ห้อง</label><select id="acRoom"></select></div>
+      <div class="field"><label>วันที่</label><input type="date" id="acDate"></div>
+      <div class="field"><label>กิจกรรม</label>
+        <select id="acAct">
+          <option value="ล้างแอร์">ล้างแอร์</option>
+          <option value="ติดตั้งใหม่">ติดตั้งใหม่</option>
+          <option value="เปลี่ยนเครื่อง">เปลี่ยนเครื่อง</option>
+          <option value="ซ่อม">ซ่อม</option>
+        </select></div>
+      <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input type="number" id="acCost" placeholder="ไม่บังคับ"></div>
+      <div class="field"><label>ช่าง / ร้าน</label><input id="acVendor" placeholder="ไม่บังคับ"></div>
+      <div class="field"><label>หมายเหตุ</label><input id="acNote" placeholder="ไม่บังคับ"></div>
+    </div>
+    <div class="field"><label>รูปภาพ (ก่อน/หลัง — ไม่บังคับ)</label>
+      <input type="file" id="acPhoto" accept="image/*"></div>
+    <div class="btnrow"><button class="btn btn-primary" id="acSave">💾 บันทึกงาน</button></div>
+  </div>
+  <div class="card">
+    <h2>🕓 บันทึกล่าสุด</h2>
+    <div id="acRecentLog"><p class="hint">—</p></div>
+  </div>
+</section>
+
+<!-- ===== แอร์: ประวัติทั้งหมด ===== -->
+<section class="tabpage" id="page-achistory">
+  <div class="card">
+    <div class="toolbar">
+      <select id="acHRoom"><option value="">ทุกห้อง</option></select>
+      <select id="acHAct">
+        <option value="">ทุกกิจกรรม</option>
+        <option>ล้างแอร์</option><option>ติดตั้งใหม่</option><option>เปลี่ยนเครื่อง</option><option>ซ่อม</option>
+      </select>
+      <span class="hint" id="acHistCount"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr><th>วันที่</th><th>ห้อง</th><th>กิจกรรม</th><th>หมายเหตุ</th>
+          <th>ค่าใช้จ่าย</th><th>ช่าง/ร้าน</th><th>รูป</th><th></th></tr></thead>
+        <tbody id="acHistBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== แอร์: ห้อง / แอร์ ===== -->
+<section class="tabpage" id="page-acrooms">
+  <div class="card">
+    <div class="toolbar" style="justify-content:space-between">
+      <span class="hint" id="acRoomCount"></span>
+      <button class="btn btn-primary btn-sm" onclick="openACRoomModal()">＋ เพิ่มห้อง</button>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr><th>ห้อง</th><th>ประเภท</th><th>หมายเหตุ</th><th></th></tr></thead>
+        <tbody id="acRoomsBody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="margin-top:8px">ห้องประเภทตรงกับป้าย "ห้องไม่มีแอร์" (ตั้งค่าได้ที่โมดูลตั้งค่า เช่น พัดลม) จะไม่ถูกนับในภาพรวมและสถานะการล้าง</p>
+  </div>
+</section>
+
+</main>
+</section>
+
+<!-- ═══════════════ โมดูล: ตั้งค่า ═══════════════ -->
+<section class="module" id="module-setting">
+<main>
+  <div class="card">
+    <h2>🔌 เชื่อมต่อ Google Sheet</h2>
+    <p class="hint">วาง URL ของ Apps Script Web App (ลงท้ายด้วย /exec) — <b>URL เดียวใช้ทุกระบบ</b> ทั้งบิล ล้างแอร์ และผู้พัก</p>
     <div class="field" style="margin-top:8px">
       <label>Web App URL</label>
       <input type="url" id="setApiUrl" placeholder="https://script.google.com/macros/s/…/exec">
@@ -424,10 +607,11 @@ table.tbl tr:hover td{background:#f7f9fb}
     <div class="btnrow">
       <button class="btn btn-primary" id="btnConnect">🔌 เชื่อมต่อและโหลดข้อมูล</button>
     </div>
-    <p class="hint" style="margin-top:8px">ยังไม่เชื่อมต่อ? แอพจะทำงานใน<b>โหมดทดลอง</b> (ข้อมูลเก็บในเครื่องนี้เท่านั้น)</p>
+    <p class="hint" style="margin-top:8px">ยังไม่เชื่อมต่อ? โมดูลบิลจะทำงานใน<b>โหมดทดลอง</b> (ข้อมูลเก็บในเครื่องนี้เท่านั้น) ส่วนโมดูลล้างแอร์ต้องเชื่อมต่อก่อนใช้งาน</p>
   </div>
+
   <div class="card">
-    <h2>อัตราค่าบริการ</h2>
+    <h2>🧾 อัตราค่าบริการ (บิล)</h2>
     <div class="rates-grid">
       <div class="field"><label>ค่าน้ำ (บาท/หน่วย)</label><input type="number" id="setWaterRate" step="0.5"></div>
       <div class="field"><label>ค่าไฟ (บาท/หน่วย)</label><input type="number" id="setElecRate" step="0.5"></div>
@@ -441,14 +625,24 @@ table.tbl tr:hover td{background:#f7f9fb}
       <div class="field"><label>เบอร์โทรติดต่อ (แสดงบนบิล)</label><input type="text" id="setContactPhone"></div>
     </div>
     <div class="field"><label>ข้อความท้ายบิล (ช่องทางชำระเงิน)</label><input type="text" id="setPayNote"></div>
-    <div class="btnrow">
-      <button class="btn btn-ghost" id="btnSaveLocal">บันทึกในเครื่องนี้</button>
-      <button class="btn btn-primary" id="btnSaveRemote">บันทึกขึ้น Google Sheet</button>
-    </div>
   </div>
-</section>
 
+  <div class="card">
+    <h2>❄️ ตั้งค่าระบบล้างแอร์</h2>
+    <div class="rates-grid">
+      <div class="field"><label>รอบล้างแอร์ (เดือน)</label><input type="number" id="setAcInterval"></div>
+      <div class="field"><label>แจ้งเตือนล่วงหน้า (วัน)</label><input type="number" id="setAcLead"></div>
+      <div class="field"><label>ป้าย "ห้องไม่มีแอร์"</label><input type="text" id="setAcFan"></div>
+    </div>
+    <p class="hint">ห้องในโมดูลล้างแอร์ที่ประเภทตรงกับป้ายนี้ (เช่น พัดลม) จะไม่นับในสรุปรอบล้าง</p>
+  </div>
+
+  <div class="btnrow" style="margin-bottom:20px">
+    <button class="btn btn-ghost" id="btnSaveLocal">บันทึกในเครื่องนี้</button>
+    <button class="btn btn-primary" id="btnSaveRemote">💾 บันทึกขึ้น Google Sheet</button>
+  </div>
 </main>
+</section>
 
 <!-- ===== Modal เพิ่ม/แก้ไขผู้พัก ===== -->
 <div class="modal-bg" id="tenantModalBg">
@@ -497,6 +691,24 @@ table.tbl tr:hover td{background:#f7f9fb}
   </div>
 </div>
 
+<!-- ===== Modal เพิ่ม/แก้ไขห้องแอร์ ===== -->
+<div class="modal-bg" id="acRoomModalBg">
+  <div class="modal">
+    <h3 id="acRoomModalTitle">เพิ่มห้อง</h3>
+    <input type="hidden" id="acmEditRoom">
+    <div class="field"><label>หมายเลขห้อง</label><input id="acmRoom"></div>
+    <div class="field"><label>ประเภท</label>
+      <select id="acmType">
+        <option>พัดลม</option><option>แอร์ S</option><option>แอร์ M</option><option>แอร์ L</option>
+      </select></div>
+    <div class="field"><label>หมายเหตุ</label><input id="acmNote"></div>
+    <div class="btnrow">
+      <button class="btn btn-primary" id="acmSave">💾 บันทึก</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('acRoomModalBg').classList.remove('show')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <iframe name="upFrame" style="display:none"></iframe>
 
@@ -513,18 +725,20 @@ const store = {
 };
 
 const state = {
-  apiUrl: store.get('apiUrl',''),
+  apiUrl: store.get('apiUrl','') || localStorage.getItem('knr_ac_api') || '',
   connected: false,
   month: new Date().toISOString().slice(0,7),
   settings: Object.assign({waterRate:18, elecRate:8, waterMinUnits:2, elecMinUnits:10,
     commonFee:100, fineFee:0, wifi:'8484848484', contactPhone:'061-145-6242',
-    payNote:'ชำระเงินสดที่สำนักงาน หรือโอนเข้าบัญชีตามที่แจ้งไว้\nกรุณาชำระภายในกำหนด'},
+    payNote:'ชำระเงินสดที่สำนักงาน หรือโอนเข้าบัญชีตามที่แจ้งไว้\nกรุณาชำระภายในกำหนด',
+    intervalMonths:12, leadDays:30, fanLabel:'พัดลม'},
     store.get('settings', {})),
   rooms: ROOM_LIST.map(r => ({room:r, type:'พัดลม', rent:2400, common:100, fine:0, phone:0, parking:0})),
   tenants: store.get('demo_tenants', []),
   bills: store.get('demo_bills', []),
   readings: {}, prevReadings: {}, prev2Readings: {},
   meterPhotos: [],
+  ac: { rooms:[], log:[], summary:[], stats:{}, loaded:false },
 };
 
 const DEMO_PREV = {'101':{water:120,elec:4310},'102':{water:98,elec:3985},'201':{water:210,elec:5120},
@@ -535,6 +749,7 @@ const DEMO_PREV = {'101':{water:120,elec:4310},'102':{water:98,elec:3985},'201':
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function thaiMonth(ym){ const [y,m]=ym.split('-'); return THAI_MONTHS[+m-1]+' '+(+y+543); }
 function thaiMonthShort(ym){ const S=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const [y,m]=ym.split('-'); return S[+m-1]+' '+(+y+543); }
@@ -544,7 +759,7 @@ function thaiDateShort(iso){ if(!iso) return '-'; const d=new Date(iso+'T00:00:0
   return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+(d.getFullYear()+543); }
 function prevMonthOf(ym){ const [y,m]=ym.split('-').map(Number);
   const d=new Date(y, m-2, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
-function dueOf(ym){ // ★ วันที่ 5 ของเดือนถัดไป
+function dueOf(ym){ // วันที่ 5 ของเดือนถัดไป
   const [y,m]=ym.split('-').map(Number);
   const d=new Date(y, m, 5);
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-05';
@@ -555,6 +770,39 @@ function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('sho
 function typeOf(room){ const r=state.rooms.find(x=>x.room===room); return r? (r.type||'พัดลม') : ''; }
 function activeTenantOf(room){ return state.tenants.find(t=>t.room===room && t.status==='active'); }
 function tenantName(t){ return t? [t.firstName,t.lastName].filter(Boolean).join(' ') : ''; }
+
+/* ================= สลับโมดูล / แท็บ ================= */
+function showModule(name){
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  $('module-'+name).classList.add('active');
+  $('monthPickWrap').style.display = name==='bill' ? 'flex' : 'none';
+  $('btnHome').style.display = name==='home' ? 'none' : 'inline-flex';
+  window.scrollTo(0,0);
+  if(name==='bill'){ renderDashboard(); }
+  if(name==='tenant') renderTenants();
+  if(name==='setting') fillSettingsForm();
+  if(name==='ac') loadAC();
+}
+document.querySelectorAll('nav.tabs').forEach(nav=>{
+  nav.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      nav.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+      const mod = nav.closest('.module');
+      mod.querySelectorAll('.tabpage').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      $('page-'+b.dataset.tab).classList.add('active');
+      const t = b.dataset.tab;
+      if(t==='bill'){ renderBill(); renderBillHistory(); }
+      if(t==='dash') renderDashboard();
+      if(t==='bills') renderBillsTable();
+      if(t==='acdash') renderACDash();
+      if(t==='acstatus') renderACStatus();
+      if(t==='achistory') renderACHistory();
+      if(t==='acrooms') renderACRooms();
+      if(t==='acadd' && !$('acDate').value) $('acDate').value = todayISO();
+    });
+  });
+});
 
 /* ================= JSONP (เลี่ยง CORS 100%) ================= */
 let jsonpN = 0;
@@ -573,7 +821,6 @@ function jsonp(params){
     document.body.appendChild(s);
   });
 }
-/* เรียก API: อ่าน/เขียน (เขียนส่ง data เป็น JSON) — ถ้าไม่เชื่อมต่อจะใช้โหมดทดลองในเครื่อง */
 async function api(action, params={}, data){
   if(!state.connected) return demoApi(action, params, data);
   const p = Object.assign({action}, params);
@@ -583,7 +830,7 @@ async function api(action, params={}, data){
   return r;
 }
 
-/* ================= โหมดทดลอง (เก็บในเครื่อง) ================= */
+/* ================= โหมดทดลอง (เก็บในเครื่อง — เฉพาะบิล/ผู้พัก) ================= */
 function demoApi(action, params, data){
   const D = {
     readings(){ return { ok:true,
@@ -641,13 +888,16 @@ async function connect(){
     const boot = await jsonp({action:'bootstrap'});
     if(!boot.ok) throw new Error(boot.error||'bootstrap failed');
     state.connected = true;
+    state.ac.loaded = false;
     if(boot.settings) Object.assign(state.settings, boot.settings);
     if(boot.rooms && boot.rooms.length) state.rooms = boot.rooms;
     state.tenants = boot.tenants || [];
     $('connDot').classList.add('on');
+    $('homeConnHint').textContent = 'เชื่อมต่อ Google Sheet แล้ว ✓';
     toast('เชื่อมต่อ Google Sheet สำเร็จ ✓');
     await Promise.all([loadMonth(), loadBills()]);
     renderAll();
+    if($('module-ac').classList.contains('active')) loadAC(true);
   }catch(e){
     state.connected = false; $('connDot').classList.remove('on');
     toast('เชื่อมต่อไม่สำเร็จ: '+e.message);
@@ -673,7 +923,7 @@ function renderAll(){
   renderTenants(); renderBillsTable(); renderInvoiceSummary(); renderDashboard(); renderMeterPhotos();
 }
 
-/* ================= การคำนวณหน่วย (★ ขั้นต่ำ น้ำ 2 / ไฟ 10) ================= */
+/* ================= การคำนวณหน่วย (ขั้นต่ำ น้ำ/ไฟ) ================= */
 function unitsRaw(room, kind){
   const p = (state.prevReadings[room]||{})[kind];
   const c = (state.readings[room]||{})[kind];
@@ -688,7 +938,7 @@ function unitsBilled(room, kind){
   return raw < min ? {billed:min, raw, minApplied:true} : {billed:raw, raw, minApplied:false};
 }
 
-/* ================= Dashboard ================= */
+/* ================= Dashboard บิล ================= */
 function renderDashboard(){
   $('dashMonthLabel').textContent = thaiMonth(state.month);
   const monthBills = state.bills.filter(b=>b.month===state.month && b.status!=='ยกเลิก');
@@ -711,7 +961,7 @@ function renderDashboard(){
   renderAlerts();
 }
 
-/* ================= ⚠️ เตือนมิเตอร์ผิดปกติ ================= */
+/* ================= เตือนมิเตอร์ผิดปกติ ================= */
 function meterAlerts(room){
   const out = [];
   const prev = state.prevReadings[room]||{}, cur = state.readings[room]||{};
@@ -743,7 +993,7 @@ function renderAlerts(){
     '<p class="hint">✓ ไม่พบความผิดปกติของมิเตอร์เดือนนี้</p>';
 }
 
-/* ================= แท็บผู้พัก ================= */
+/* ================= โมดูลผู้พัก ================= */
 function renderTenants(){
   const f = $('tenantFilter').value;
   const list = state.tenants.filter(t=> f==='all' ? true : t.status===f)
@@ -753,8 +1003,8 @@ function renderTenants(){
     return `<tr>
       <td><b>${t.room}</b></td>
       <td>${typeOf(t.room)}</td>
-      <td>${t.firstName||''}</td><td>${t.lastName||''}</td>
-      <td>${t.phone||'-'}</td>
+      <td>${esc(t.firstName)||''}</td><td>${esc(t.lastName)||''}</td>
+      <td>${esc(t.phone)||'-'}</td>
       <td>${thaiDateShort(t.moveInDate)}</td>
       <td>${thaiDateShort(t.moveOutDate)}</td>
       <td><span class="badge ${active?'green':'gray'}">${active?'อยู่ปัจจุบัน':'ย้ายออก'}</span></td>
@@ -809,7 +1059,6 @@ $('tmSave').addEventListener('click', async ()=>{
       idType: $('tmIdType').value, idNumberLast4: $('tmIdLast4').value.trim(),
       moveInDate: $('tmMoveIn').value,
     });
-    // อัปโหลดรูปบัตร (ถ้าเลือกไฟล์)
     const file = $('tmIdFile').files[0];
     if(file && state.connected){
       toast('บันทึกแล้ว กำลังอัปโหลดรูปบัตร…');
@@ -819,7 +1068,6 @@ $('tmSave').addEventListener('click', async ()=>{
     } else if(file && !state.connected){
       toast('บันทึกข้อมูลแล้ว (รูปบัตรอัปโหลดได้เมื่อเชื่อมต่อ Google)');
     } else toast('บันทึกข้อมูลผู้พักแล้ว ✓');
-    // โหลดข้อมูลใหม่ให้ตรงกับชีต
     if(state.connected){
       const boot = await jsonp({action:'bootstrap'});
       if(boot.ok){ state.rooms=boot.rooms; state.tenants=boot.tenants||[]; }
@@ -830,7 +1078,6 @@ $('tmSave').addEventListener('click', async ()=>{
   $('tmSave').disabled = false;
 });
 
-/* อัปโหลดรูปบัตรจากปุ่มในตาราง */
 function uploadIdFor(tenantId){
   const t = state.tenants.find(x=>x.tenantId===tenantId); if(!t) return;
   if(!state.connected){ toast('ต้องเชื่อมต่อ Google Sheet ก่อนจึงอัปโหลดรูปได้'); return; }
@@ -849,12 +1096,11 @@ function uploadIdFor(tenantId){
   inp.click();
 }
 
-/* ย้ายออก */
 let moveOutId = null;
 function openMoveOut(id){
   const t = state.tenants.find(x=>x.tenantId===id); if(!t) return;
   moveOutId = id;
-  $('moName').innerHTML = `ห้อง <b>${t.room}</b> — ${tenantName(t)}`;
+  $('moName').innerHTML = `ห้อง <b>${t.room}</b> — ${esc(tenantName(t))}`;
   $('moDate').value = todayISO();
   $('moveoutModalBg').classList.add('show');
 }
@@ -893,7 +1139,6 @@ async function uploadFile(kind, meta, file){
   const dataUrl = await resizeImage(file);
   const base64 = dataUrl.split(',')[1];
   const uploadId = 'U'+Date.now()+Math.floor(Math.random()*1000);
-  // form-POST เข้า iframe ที่ซ่อนไว้ (ฟอร์มไม่ติดข้อจำกัด CORS)
   const form = document.createElement('form');
   form.method='POST'; form.action=state.apiUrl; form.target='upFrame'; form.style.display='none';
   const add = (n,v)=>{ const i=document.createElement('input'); i.type='hidden'; i.name=n; i.value=v; form.appendChild(i); };
@@ -902,13 +1147,12 @@ async function uploadFile(kind, meta, file){
   add('mimeType','image/jpeg'); add('filename', (file.name||'photo.jpg').replace(/\.[^.]+$/,'')+'.jpg');
   const ta = document.createElement('textarea'); ta.name='data'; ta.style.display='none'; ta.value=base64; form.appendChild(ta);
   document.body.appendChild(form); form.submit(); form.remove();
-  // รอผลผ่าน JSONP (backend เก็บผลไว้ใน Cache)
   for(let i=0;i<25;i++){
     await sleep(1600);
     try{
       const r = await jsonp({action:'uploadstatus', id:uploadId});
       if(r.done){ if(r.ok) return r; throw new Error(r.error||'อัปโหลดไม่สำเร็จ'); }
-    }catch(e){ if(String(e.message).includes('อัปโหลด')) throw e; /* jsonp พลาดชั่วคราว ลองใหม่ */ }
+    }catch(e){ if(String(e.message).includes('อัปโหลด')) throw e; }
   }
   throw new Error('อัปโหลดหมดเวลา — ลองไฟล์เล็กลง');
 }
@@ -931,7 +1175,7 @@ $('meterPhotoFile').addEventListener('change', async e=>{
 });
 function renderMeterPhotos(){
   $('meterPhotoList').innerHTML = state.meterPhotos.map(p=>
-    `<a class="photo-chip" href="${p.url}" target="_blank">🖼 ${p.filename||'รูปมิเตอร์'}</a>`).join('');
+    `<a class="photo-chip" href="${p.url}" target="_blank">🖼 ${esc(p.filename)||'รูปมิเตอร์'}</a>`).join('');
 }
 
 /* ================= แท็บมิเตอร์ ================= */
@@ -946,7 +1190,7 @@ function renderMeterGrid(){
     el.className='room-card';
     el.innerHTML = `
       <div class="rc-head"><b>ห้อง ${rm.room} <span style="font-size:12px;font-weight:400;color:var(--muted)">(${rm.type||'พัดลม'})</span></b>
-        <span>${t? tenantName(t) : 'ว่าง'}</span></div>
+        <span>${t? esc(tenantName(t)) : 'ว่าง'}</span></div>
       <div class="meter-labels"><div></div><div>ครั้งก่อน</div><div>ครั้งนี้</div><div>หน่วย</div></div>
       <div class="meter-row"><span class="ico">💧</span>
         <span class="prev">${prev.water ?? '—'}</span>
@@ -1001,7 +1245,7 @@ function refreshBillForm(){
   const sel = $('billRoom'); const keep = sel.value;
   sel.innerHTML = state.rooms.map(r=>{
     const t = activeTenantOf(r.room);
-    return `<option value="${r.room}">ห้อง ${r.room} (${r.type||'พัดลม'})${t? ' — '+tenantName(t):''}</option>`;
+    return `<option value="${r.room}">ห้อง ${r.room} (${r.type||'พัดลม'})${t? ' — '+esc(tenantName(t)):''}</option>`;
   }).join('');
   if(keep && [...sel.options].some(o=>o.value===keep)) sel.value = keep;
   loadRoomIntoForm();
@@ -1014,7 +1258,7 @@ function loadRoomIntoForm(){
   $('fPhone').value   = rm.phone ?? 0;
   $('fParking').value = rm.parking ?? 0;
   $('fArrears').value = 0;
-  $('fDue').value = dueOf(state.month);      // ★ วันที่ 5 ของเดือนถัดไป
+  $('fDue').value = dueOf(state.month);
   renderBill(); renderBillHistory();
 }
 
@@ -1050,7 +1294,7 @@ function renderBill(room){
   $('bpNo').textContent = 'เลขที่ '+d.no;
   $('bpRoom').textContent = d.room;
   $('bpRoomType').textContent = '('+d.type+')';
-$('bpTenant').textContent = d.tenant || '—';
+  $('bpTenant').textContent = d.tenant || '—';
   $('bpMonth').textContent = thaiMonth(state.month);
   $('bpWifi').textContent = state.settings.wifi || '';
   $('bpTel').textContent = state.settings.contactPhone || '';
@@ -1071,7 +1315,6 @@ $('bpTenant').textContent = d.tenant || '—';
   return d;
 }
 
-/* ประวัติบิลรายห้อง (★ ข้อ 14) */
 function renderBillHistory(){
   const room = $('billRoom').value;
   const hist = state.bills.filter(b=>b.room===room)
@@ -1113,157 +1356,83 @@ async function downloadPDF(){
 }
 function exportRooms(){
   const officeRooms = ['101', '102'];
-
   return state.rooms.filter(r => {
     const room = String(r.room);
     const tenant = activeTenantOf(room);
-
-    // พิมพ์เฉพาะห้องที่มีผู้พัก และไม่รวมห้องออฟฟิศ 101, 102
     return !officeRooms.includes(room) && !!tenant;
   });
 }
 
 async function downloadAllPNGZip(){
-  if(typeof JSZip === 'undefined'){
-    toast('ยังโหลด JSZip ไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ');
-    return;
-  }
-
+  if(typeof JSZip === 'undefined'){ toast('ยังโหลด JSZip ไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ'); return; }
   const rooms = exportRooms();
-
-  if(!rooms.length){
-    toast('ไม่มีห้องที่ต้องสร้างบิล');
-    return;
-  }
-
+  if(!rooms.length){ toast('ไม่มีห้องที่ต้องสร้างบิล'); return; }
   const keepRoom = $('billRoom').value;
   const zip = new JSZip();
-
   $('btnAllPNG').disabled = true;
   toast('กำลังสร้างรูปบิลทุกห้อง…');
-
   try{
     for(let i = 0; i < rooms.length; i++){
       const room = String(rooms[i].room);
-
       $('billRoom').value = room;
       loadRoomIntoForm();
       renderBill(room);
-
       await sleep(80);
-
       const canvas = await captureBill();
-      const dataUrl = canvas.toDataURL('image/png');
-      const base64 = dataUrl.split(',')[1];
-
+      const base64 = canvas.toDataURL('image/png').split(',')[1];
       zip.file(`บิล_${room}_${state.month}.png`, base64, {base64:true});
     }
-
     const blob = await zip.generateAsync({type:'blob'});
     const a = document.createElement('a');
-
     a.href = URL.createObjectURL(blob);
     a.download = `บิลทุกห้อง_${state.month}.zip`;
     a.click();
-
     URL.revokeObjectURL(a.href);
-
     toast('ดาวน์โหลด PNG ทุกห้องเป็น ZIP แล้ว ✓');
-
-  }catch(e){
-    toast('สร้างรูปบิลไม่สำเร็จ: ' + e.message);
-  }
-
+  }catch(e){ toast('สร้างรูปบิลไม่สำเร็จ: ' + e.message); }
   if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
     $('billRoom').value = keepRoom;
     loadRoomIntoForm();
   }
-
   $('btnAllPNG').disabled = false;
 }
 
 async function downloadAllPDF(){
   const rooms = exportRooms();
-
-  if(!rooms.length){
-    toast('ไม่มีห้องที่ต้องสร้าง PDF');
-    return;
-  }
-
+  if(!rooms.length){ toast('ไม่มีห้องที่ต้องสร้าง PDF'); return; }
   toast('กำลังสร้าง PDF รวมทุกห้องแบบ 2 ใบต่อหน้า…');
   $('btnAllPDF').disabled = true;
-
   const keepRoom = $('billRoom').value;
-
-  // A4 แนวนอน: วางบิลซ้าย-ขวา 2 ใบต่อ 1 หน้า
-  const pdf = new jspdf.jsPDF({
-    unit: 'mm',
-    format: 'a4',
-    orientation: 'landscape'
-  });
-
-  const margin = 8;
-  const gap = 6;
+  const pdf = new jspdf.jsPDF({unit:'mm', format:'a4', orientation:'landscape'});
+  const margin = 8, gap = 6;
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
-
   const slotW = (pageW - (margin * 2) - gap) / 2;
   const slotH = pageH - (margin * 2);
-
   try{
     for(let i = 0; i < rooms.length; i++){
       const room = String(rooms[i].room);
-
-      if(i > 0 && i % 2 === 0){
-        pdf.addPage();
-      }
-
+      if(i > 0 && i % 2 === 0) pdf.addPage();
       $('billRoom').value = room;
       loadRoomIntoForm();
       renderBill(room);
-
       await sleep(80);
-
       const canvas = await captureBill();
       const ratio = canvas.height / canvas.width;
-
-      let w = slotW;
-      let h = w * ratio;
-
-      if(h > slotH){
-        h = slotH;
-        w = h / ratio;
-      }
-
+      let w = slotW, h = w * ratio;
+      if(h > slotH){ h = slotH; w = h / ratio; }
       const col = i % 2;
-      const slotX = margin + col * (slotW + gap);
-      const slotY = margin;
-
-      const x = slotX + (slotW - w) / 2;
-      const y = slotY + (slotH - h) / 2;
-
-      pdf.addImage(
-        canvas.toDataURL('image/jpeg', 0.95),
-        'JPEG',
-        x,
-        y,
-        w,
-        h
-      );
+      const x = margin + col * (slotW + gap) + (slotW - w) / 2;
+      const y = margin + (slotH - h) / 2;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, y, w, h);
     }
-
     pdf.save(`บิลรวมทุกห้อง_2ใบต่อหน้า_${state.month}.pdf`);
     toast('สร้าง PDF รวมแบบ 2 ใบต่อหน้าแล้ว ✓');
-
-  }catch(e){
-    toast('สร้าง PDF ไม่สำเร็จ: ' + e.message);
-  }
-
+  }catch(e){ toast('สร้าง PDF ไม่สำเร็จ: ' + e.message); }
   if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
     $('billRoom').value = keepRoom;
     loadRoomIntoForm();
   }
-
   $('btnAllPDF').disabled = false;
 }
 async function saveBillToSheet(){
@@ -1273,84 +1442,43 @@ async function saveBillToSheet(){
     await api('savebill', {}, {month:state.month,
       bill:{room:d.room, no:d.no, due:d.due, total:d.total, items:flat}});
     await loadBills();
-   renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
+    renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
     toast(state.connected? 'บันทึกยอดบิลลง Sheet แล้ว ✓' : 'โหมดทดลอง: บันทึกบิลในเครื่องแล้ว ✓');
   }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
 }
 async function saveAllBillsToSheet(){
   const btn = $('btnSaveAllBills');
   if(btn) btn.disabled = true;
-
   const keepRoom = $('billRoom').value;
   const officeRooms = ['101', '102'];
-
   toast('กำลังบันทึกบิลทุกห้องของเดือนนี้…');
-
-  let saved = 0;
-  let skipped = 0;
-  let failed = 0;
-
+  let saved = 0, skipped = 0, failed = 0;
   try{
     for(const rm of state.rooms){
       const room = String(rm.room);
       const tenant = activeTenantOf(room);
-
-      // ข้ามห้องออฟฟิศ 101, 102
-      if(officeRooms.includes(room)){
-        skipped++;
-        continue;
-      }
-
-      // ข้ามห้องว่าง
-      if(!tenant){
-        skipped++;
-        continue;
-      }
-
+      if(officeRooms.includes(room)){ skipped++; continue; }
+      if(!tenant){ skipped++; continue; }
       try{
         const d = billData(room);
         const flat = {};
         d.items.forEach(i => flat[i.key || i.name] = i.amt);
-
-        await api('savebill', {}, {
-          month: state.month,
-          bill: {
-            room: d.room,
-            no: d.no,
-            due: d.due,
-            total: d.total,
-            items: flat
-          }
-        });
-
+        await api('savebill', {}, {month: state.month,
+          bill: {room: d.room, no: d.no, due: d.due, total: d.total, items: flat}});
         saved++;
-
-      }catch(err){
-        console.error('save bill failed room', room, err);
-        failed++;
-      }
+      }catch(err){ console.error('save bill failed room', room, err); failed++; }
     }
-
     await loadBills();
-
     if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
       $('billRoom').value = keepRoom;
     }
-
-    renderBillsTable();
-    renderInvoiceSummary();
-    renderBillHistory();
-    renderDashboard();
-
+    renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
     toast(`บันทึกบิลแล้ว ${saved} ห้อง, ข้าม ${skipped} ห้อง${failed ? ', ล้มเหลว '+failed+' ห้อง' : ''} ✓`);
-
-  }catch(e){
-    toast('บันทึกบิลทุกห้องไม่สำเร็จ: ' + e.message);
-  }
-
+  }catch(e){ toast('บันทึกบิลทุกห้องไม่สำเร็จ: ' + e.message); }
   if(btn) btn.disabled = false;
 }
-/* ================= แท็บรายการบิล (★ ข้อ 11) ================= */
+
+/* ================= แท็บรายการบิล ================= */
 function dispStatus(b){
   if(b.status==='ชำระแล้ว' || b.status==='ยกเลิก') return b.status;
   if(b.due && b.due < todayISO()) return 'ค้างชำระ';
@@ -1364,22 +1492,11 @@ function billOfSelectedMonth(room){
   );
 }
 
-function billOfSelectedMonth(room){
-  return state.bills.find(b =>
-    b.month === state.month &&
-    String(b.room) === String(room) &&
-    b.status !== 'ยกเลิก'
-  );
-}
-
 function renderInvoiceSummary(){
   if(!$('invoiceSummaryRows')) return;
-
   $('invoiceSummaryMonth').textContent = thaiMonth(state.month);
-
   const officeRooms = ['101', '102'];
   let sum = 0;
-
   const rows = state.rooms
     .slice()
     .sort((a,b) => String(a.room).localeCompare(String(b.room), 'th', {numeric:true}))
@@ -1389,47 +1506,28 @@ function renderInvoiceSummary(){
       const occupied = !!tenant;
       const bill = billOfSelectedMonth(room);
       const isOffice = officeRooms.includes(room);
-
       let amountHtml = '';
-
-      if(isOffice){
-        // ห้อง 101-102 เป็นออฟฟิศ: ไม่แสดงยอดจ่าย และไม่รวมเงิน
-        amountHtml = '---';
-
-      } else if(!occupied){
-        // ห้องว่าง: ไม่แสดงยอดจ่าย และไม่รวมเงิน
-        amountHtml = '---';
-
-      } else if(bill){
-        // ห้องมีคนอยู่และมีบิลแล้ว: แสดงยอดและนำไปรวม
+      if(isOffice){ amountHtml = '---'; }
+      else if(!occupied){ amountHtml = '---'; }
+      else if(bill){
         amountHtml = fmt(bill.total) + ' บาท';
         sum += Number(bill.total) || 0;
-
       } else {
-        // ห้องมีคนอยู่ แต่ยังไม่ได้บันทึกบิล
         amountHtml = '<span class="hint">ยังไม่ออกบิล</span>';
       }
-
-      return `
-        <tr>
+      return `<tr>
           <td><b>${room}</b></td>
           <td>${r.type || typeOf(room) || '-'}</td>
-          <td>
-            <span class="badge ${occupied ? 'green' : 'gray'}">
-              ${occupied ? 'มีคนอยู่' : 'ว่าง'}
-            </span>
-          </td>
-          <td>${tenant ? (tenant.firstName || '') : '-'}</td>
-          <td>${tenant ? (tenant.lastName || '') : '-'}</td>
+          <td><span class="badge ${occupied ? 'green' : 'gray'}">${occupied ? 'มีคนอยู่' : 'ว่าง'}</span></td>
+          <td>${tenant ? esc(tenant.firstName || '') : '-'}</td>
+          <td>${tenant ? esc(tenant.lastName || '') : '-'}</td>
           <td class="num">${amountHtml}</td>
-        </tr>
-      `;
+        </tr>`;
     });
-
   $('invoiceSummaryRows').innerHTML = rows.join('');
   $('invoiceSummaryTotal').textContent = fmt(sum) + ' บาท';
 }
-  
+
 function renderBillsTable(){
   const f = $('billsFilter').value;
   let list = state.bills.slice();
@@ -1444,7 +1542,7 @@ function renderBillsTable(){
     return `<tr>
       <td>${thaiMonthShort(b.month)}</td>
       <td><b>${b.room}</b></td>
-      <td>${tenant? tenantName(tenant):'-'}</td>
+      <td>${tenant? esc(tenantName(tenant)):'-'}</td>
       <td class="num">${fmt(b.total)}</td>
       <td>${thaiDateShort(b.due)}</td>
       <td><span class="badge ${cls}">${st}</span></td>
@@ -1470,7 +1568,222 @@ function unpayBill(m,r){ setStatus(m,r,'รอชำระ'); }
 $('billsFilter').addEventListener('change', renderBillsTable);
 $('btnSaveAllBills').addEventListener('click', saveAllBillsToSheet);
 
-/* ================= แท็บตั้งค่า ================= */
+/* ═══════════════ ★ โมดูลล้างแอร์ ═══════════════ */
+function acBadge(st){
+  return st==='เกินกำหนด'?'red':st==='ใกล้ครบกำหนด'?'amber':st==='ปกติ'?'green':'gray';
+}
+function acDaysText(d){
+  if(d===null||d===undefined) return '—';
+  if(d<0) return 'เกิน '+(-d)+' วัน';
+  if(d===0) return 'วันนี้';
+  return 'อีก '+d+' วัน';
+}
+
+async function loadAC(force){
+  if(!state.connected){
+    const msg = '<p class="hint">⚠️ ต้องเชื่อมต่อ Google Sheet ก่อนใช้งานโมดูลล้างแอร์ — ไปที่ ⚙️ ตั้งค่า</p>';
+    $('acStatGrid').innerHTML = msg;
+    $('acAlertList').innerHTML = msg;
+    $('acStatusBody').innerHTML = '<tr><td colspan="8" class="hint" style="padding:18px">ยังไม่ได้เชื่อมต่อ</td></tr>';
+    $('acHistBody').innerHTML = '<tr><td colspan="8" class="hint" style="padding:18px">ยังไม่ได้เชื่อมต่อ</td></tr>';
+    $('acRoomsBody').innerHTML = '<tr><td colspan="4" class="hint" style="padding:18px">ยังไม่ได้เชื่อมต่อ</td></tr>';
+    return;
+  }
+  if(state.ac.loaded && !force){ renderACAll(); return; }
+  $('acStatGrid').innerHTML = '<p class="hint">กำลังโหลดข้อมูลแอร์…</p>';
+  try{
+    const r = await api('acdata');
+    state.ac = { rooms:r.rooms||[], log:r.log||[], summary:r.summary||[],
+      stats:r.stats||{}, loaded:true };
+    renderACAll();
+  }catch(e){
+    toast('โหลดข้อมูลแอร์ไม่สำเร็จ: '+e.message);
+    $('acStatGrid').innerHTML = '<p class="hint">โหลดข้อมูลไม่สำเร็จ: '+esc(e.message)+'</p>';
+  }
+}
+function renderACAll(){
+  renderACDash(); fillACSelects(); fillACTypeFilter();
+  renderACStatus(); renderACHistory(); renderACRooms(); renderACRecent();
+  if(!$('acDate').value) $('acDate').value = todayISO();
+}
+
+/* ---- แอร์: ภาพรวม ---- */
+function renderACDash(){
+  if(!state.ac.loaded) return;
+  const s = state.ac.stats;
+  const cards = [
+    {v:s.totalAC||0, l:'แอร์ทั้งหมด (เครื่อง)'},
+    {v:s.overdue||0, l:'เกินกำหนดล้าง', cls:(s.overdue?'bad':'')},
+    {v:s.dueSoon||0, l:'ใกล้ครบกำหนด', cls:(s.dueSoon?'warn':'')},
+    {v:s.ok||0, l:'สถานะปกติ', cls:'good'},
+    {v:s.cleanedThisYear||0, l:'ล้างแล้วปีนี้'},
+    {v:s.neverCleaned||0, l:'ยังไม่เคยล้าง'}
+  ];
+  $('acStatGrid').innerHTML = cards.map(c=>
+    `<div class="stat ${c.cls||''}"><div class="v">${c.v}</div><div class="l">${c.l}</div></div>`).join('');
+
+  const due = state.ac.summary.filter(r=>r.status==='เกินกำหนด'||r.status==='ใกล้ครบกำหนด');
+  if(!due.length){
+    $('acAlertList').innerHTML = '<p class="hint">🎉 ไม่มีเครื่องที่ต้องล้างด่วน ทุกห้องอยู่ในเกณฑ์ปกติ</p>';
+    return;
+  }
+  $('acAlertList').innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr>'+
+    '<th>ห้อง</th><th>ประเภท</th><th>ล้างล่าสุด</th><th>ครบกำหนด</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
+    due.map(r=>`<tr><td><b>${r.roomNo}</b></td><td><span class="badge type">${esc(r.type)}</span></td>
+      <td>${thaiDate(r.lastClean)==='—'?'—':thaiDate(r.lastClean)}${r.neverCleaned?' <span class="pill">ยังไม่เคยล้าง</span>':''}</td>
+      <td>${thaiDate(r.nextDue)}</td>
+      <td><span class="badge ${acBadge(r.status)}">${r.status}</span> <span class="hint">${acDaysText(r.daysLeft)}</span></td>
+      <td><button class="btn btn-primary btn-sm" onclick="quickClean('${r.roomNo}')">บันทึกล้าง</button></td></tr>`).join('')+
+    '</tbody></table></div>';
+}
+
+/* ---- แอร์: สถานะรายห้อง ---- */
+function fillACTypeFilter(){
+  const types = [];
+  state.ac.summary.forEach(r=>{ if(types.indexOf(r.type)<0) types.push(r.type); });
+  const keep = $('acFType').value;
+  $('acFType').innerHTML = '<option value="">ทุกประเภท</option>'+
+    types.map(t=>`<option>${esc(t)}</option>`).join('');
+  if(keep && types.includes(keep)) $('acFType').value = keep;
+}
+function renderACStatus(){
+  if(!state.ac.loaded) return;
+  const fs = $('acFStatus').value, ft = $('acFType').value;
+  const rows = state.ac.summary.filter(r=>(!fs||r.status===fs)&&(!ft||r.type===ft));
+  $('acStatusCount').textContent = rows.length+' เครื่อง';
+  $('acStatusBody').innerHTML = rows.length? rows.map(r=>
+    `<tr><td><b>${r.roomNo}</b></td><td><span class="badge type">${esc(r.type)}</span></td>
+      <td>${thaiDate(r.installed)}</td>
+      <td>${thaiDate(r.lastClean)}${r.neverCleaned?' <span class="pill">ใหม่</span>':''}</td>
+      <td>${thaiDate(r.nextDue)}</td><td class="hint">${acDaysText(r.daysLeft)}</td>
+      <td><span class="badge ${acBadge(r.status)}">${r.status}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="quickClean('${r.roomNo}')">ล้าง</button></td></tr>`).join('')
+    : '<tr><td colspan="8" class="hint" style="padding:18px">ไม่มีข้อมูล</td></tr>';
+}
+$('acFStatus').addEventListener('change', renderACStatus);
+$('acFType').addEventListener('change', renderACStatus);
+
+/* ---- แอร์: บันทึกงาน ---- */
+function fillACSelects(){
+  const optsAll = state.ac.rooms.map(r=>
+    `<option value="${esc(r.roomNo)}">${esc(r.roomNo)} (${esc(r.type)})</option>`).join('');
+  const keepA = $('acRoom').value, keepH = $('acHRoom').value;
+  $('acRoom').innerHTML = optsAll;
+  $('acHRoom').innerHTML = '<option value="">ทุกห้อง</option>'+optsAll;
+  if(keepA) $('acRoom').value = keepA;
+  if(keepH) $('acHRoom').value = keepH;
+}
+function quickClean(room){
+  const nav = document.querySelector('#module-ac nav.tabs');
+  nav.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('#module-ac .tabpage').forEach(x=>x.classList.remove('active'));
+  nav.querySelector('button[data-tab="acadd"]').classList.add('active');
+  $('page-acadd').classList.add('active');
+  $('acRoom').value = room;
+  $('acAct').value = 'ล้างแอร์';
+  $('acDate').value = todayISO();
+  window.scrollTo(0,0);
+}
+async function submitACLog(){
+  const room = $('acRoom').value, date = $('acDate').value, act = $('acAct').value;
+  if(!room||!date){ toast('กรุณาเลือกห้องและวันที่'); return; }
+  if(!state.connected){ toast('ต้องเชื่อมต่อ Google Sheet ก่อน'); return; }
+  const btn = $('acSave'); btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+  let photoURL = '';
+  const file = $('acPhoto').files[0];
+  try{
+    if(file){
+      toast('กำลังอัปโหลดรูป…');
+      const up = await uploadFile('acphoto', {room:room}, file);
+      photoURL = up.url || '';
+    }
+    await api('acaddlog', {}, {date:date, room:room, activity:act,
+      note:$('acNote').value, cost:$('acCost').value,
+      vendor:$('acVendor').value, photoURL:photoURL});
+    toast('บันทึกงานเรียบร้อย ✓');
+    $('acNote').value=''; $('acCost').value=''; $('acVendor').value=''; $('acPhoto').value='';
+    await loadAC(true);
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  btn.disabled = false; btn.textContent = '💾 บันทึกงาน';
+}
+$('acSave').addEventListener('click', submitACLog);
+
+function renderACRecent(){
+  const rows = state.ac.log.slice(0,8);
+  $('acRecentLog').innerHTML = rows.length? rows.map(l=>
+    `<div class="hist-item"><span><b>${l.roomNo}</b> · ${esc(l.activity)}${l.note?' <span class="hint">('+esc(l.note)+')</span>':''}</span>
+      <span class="hint">${thaiDate(l.date)}</span></div>`).join('')
+    : '<p class="hint">ยังไม่มีบันทึก</p>';
+}
+
+/* ---- แอร์: ประวัติทั้งหมด ---- */
+function renderACHistory(){
+  if(!state.ac.loaded) return;
+  const hr = $('acHRoom').value, ha = $('acHAct').value;
+  const rows = state.ac.log.filter(l=>(!hr||l.roomNo===hr)&&(!ha||l.activity===ha));
+  $('acHistCount').textContent = rows.length+' รายการ';
+  $('acHistBody').innerHTML = rows.length? rows.map(l=>
+    `<tr><td>${thaiDate(l.date)}</td><td><b>${l.roomNo}</b></td>
+      <td>${esc(l.activity)}</td><td>${esc(l.note||'—')}</td>
+      <td class="num">${l.cost? Number(l.cost).toLocaleString('th-TH') : '—'}</td>
+      <td>${esc(l.vendor||'—')}</td>
+      <td>${l.photoURL? `<a href="${esc(l.photoURL)}" target="_blank">🖼 ดู</a>` : '—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="delACLog('${l.id}')">ลบ</button></td></tr>`).join('')
+    : '<tr><td colspan="8" class="hint" style="padding:18px">ไม่มีรายการ</td></tr>';
+}
+$('acHRoom').addEventListener('change', renderACHistory);
+$('acHAct').addEventListener('change', renderACHistory);
+async function delACLog(id){
+  if(!confirm('ลบรายการนี้?')) return;
+  try{
+    await api('acdeletelog', {}, {id:id});
+    toast('ลบแล้ว ✓');
+    await loadAC(true);
+  }catch(e){ toast('ลบไม่สำเร็จ: '+e.message); }
+}
+
+/* ---- แอร์: ห้อง / แอร์ ---- */
+function renderACRooms(){
+  if(!state.ac.loaded) return;
+  $('acRoomCount').textContent = state.ac.rooms.length+' ห้อง';
+  $('acRoomsBody').innerHTML = state.ac.rooms.length? state.ac.rooms.map(r=>
+    `<tr><td><b>${esc(r.roomNo)}</b></td><td><span class="badge type">${esc(r.type)}</span></td>
+      <td>${esc(r.note||'—')}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openACRoomModal('${esc(r.roomNo)}')">แก้ไข</button>
+      <button class="btn btn-danger btn-sm" onclick="delACRoom('${esc(r.roomNo)}')">ลบ</button></td></tr>`).join('')
+    : '<tr><td colspan="4" class="hint" style="padding:18px">ยังไม่มีห้อง — กด "＋ เพิ่มห้อง"</td></tr>';
+}
+function openACRoomModal(room){
+  const edit = state.ac.rooms.find(r=>r.roomNo===room);
+  $('acRoomModalTitle').textContent = edit? 'แก้ไขห้อง '+room : 'เพิ่มห้อง';
+  $('acmEditRoom').value = edit? room : '';
+  $('acmRoom').value = edit? edit.roomNo : '';
+  $('acmRoom').disabled = !!edit;
+  $('acmType').value = edit? edit.type : 'แอร์ S';
+  $('acmNote').value = edit? edit.note : '';
+  $('acRoomModalBg').classList.add('show');
+}
+$('acmSave').addEventListener('click', async ()=>{
+  const editRoom = $('acmEditRoom').value;
+  const room = $('acmRoom').value.trim(), type = $('acmType').value, note = $('acmNote').value;
+  if(!room){ toast('กรอกหมายเลขห้อง'); return; }
+  try{
+    await api(editRoom? 'acupdateroom':'acaddroom', {}, {room:room, type:type, note:note});
+    toast('บันทึกห้องแล้ว ✓');
+    $('acRoomModalBg').classList.remove('show');
+    await loadAC(true);
+  }catch(e){ toast(e.message||'ไม่สำเร็จ'); }
+});
+async function delACRoom(room){
+  if(!confirm('ลบห้อง '+room+'? (ประวัติงานเดิมยังอยู่)')) return;
+  try{
+    await api('acdeleteroom', {}, {room:room});
+    toast('ลบห้องแล้ว ✓');
+    await loadAC(true);
+  }catch(e){ toast('ลบไม่สำเร็จ: '+e.message); }
+}
+
+/* ================= โมดูลตั้งค่า ================= */
 function fillSettingsForm(){
   $('setApiUrl').value = state.apiUrl;
   $('setWaterRate').value = state.settings.waterRate;
@@ -1482,6 +1795,9 @@ function fillSettingsForm(){
   $('setWifi').value      = state.settings.wifi||'';
   $('setContactPhone').value = state.settings.contactPhone||'';
   $('setPayNote').value   = state.settings.payNote||'';
+  $('setAcInterval').value = state.settings.intervalMonths ?? 12;
+  $('setAcLead').value     = state.settings.leadDays ?? 30;
+  $('setAcFan').value      = state.settings.fanLabel || 'พัดลม';
   $('hintWMin').textContent = state.settings.waterMinUnits;
   $('hintEMin').textContent = state.settings.elecMinUnits;
 }
@@ -1495,28 +1811,20 @@ function readSettingsForm(){
   state.settings.wifi      = $('setWifi').value;
   state.settings.contactPhone = $('setContactPhone').value;
   state.settings.payNote   = $('setPayNote').value;
+  state.settings.intervalMonths = Number($('setAcInterval').value)||12;
+  state.settings.leadDays  = Number($('setAcLead').value)||30;
+  state.settings.fanLabel  = $('setAcFan').value.trim()||'พัดลม';
   store.set('settings', state.settings);
   $('hintWMin').textContent = state.settings.waterMinUnits;
   $('hintEMin').textContent = state.settings.elecMinUnits;
 }
 
 /* ================= เริ่มต้น / อีเวนต์ ================= */
-document.querySelectorAll('nav.tabs button').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.tabpage').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active'); $('page-'+b.dataset.tab).classList.add('active');
-    if(b.dataset.tab==='bill'){ renderBill(); renderBillHistory(); }
-    if(b.dataset.tab==='dash') renderDashboard();
-    if(b.dataset.tab==='bills') renderBillsTable();
-    if(b.dataset.tab==='tenant') renderTenants();
-  });
-});
 $('monthInput').value = state.month;
 $('monthInput').addEventListener('change', async e=>{
   state.month = e.target.value;
   await loadMonth();
-  renderMeterGrid(); loadRoomIntoForm(); renderDashboard();renderInvoiceSummary(); renderBillsTable(); renderMeterPhotos();
+  renderMeterGrid(); loadRoomIntoForm(); renderDashboard(); renderInvoiceSummary(); renderBillsTable(); renderMeterPhotos();
 });
 $('btnSaveReadings').addEventListener('click', saveReadings);
 $('billRoom').addEventListener('change', loadRoomIntoForm);
@@ -1531,11 +1839,17 @@ $('btnSaveBill').addEventListener('click', saveBillToSheet);
 $('btnConnect').addEventListener('click', ()=>{
   state.apiUrl = $('setApiUrl').value.trim(); store.set('apiUrl', state.apiUrl); connect();
 });
-$('btnSaveLocal').addEventListener('click', ()=>{ readSettingsForm(); renderBill(); renderMeterGrid(); toast('บันทึกการตั้งค่าในเครื่องแล้ว ✓'); });
+$('btnSaveLocal').addEventListener('click', ()=>{
+  readSettingsForm(); renderBill(); renderMeterGrid();
+  state.ac.loaded = false;
+  toast('บันทึกการตั้งค่าในเครื่องแล้ว ✓');
+});
 $('btnSaveRemote').addEventListener('click', async ()=>{
   readSettingsForm(); renderBill(); renderMeterGrid();
   if(!state.connected){ toast('ยังไม่ได้เชื่อมต่อ Google Sheet'); return; }
-  try{ await api('savesettings', {}, {settings:state.settings});
+  try{
+    await api('savesettings', {}, {settings:state.settings});
+    state.ac.loaded = false;   // รอบล้างเปลี่ยน → คำนวณสรุปแอร์ใหม่ครั้งถัดไป
     toast('บันทึกการตั้งค่าขึ้น Sheet แล้ว ✓');
   }catch(e){ toast('บันทึกไม่สำเร็จ'); }
 });
