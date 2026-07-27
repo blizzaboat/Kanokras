@@ -738,6 +738,9 @@ const state = {
   bills: store.get('demo_bills', []),
   readings: {}, prevReadings: {}, prev2Readings: {},
   meterPhotos: [],
+  // เก็บค่าที่ปรับในหน้าออกบิล แยกตามเดือนและห้อง
+  // เช่น 2026-07|201 เพื่อไม่ให้ค่าของแต่ละห้องทับกัน
+  billDrafts: store.get('billDrafts', {}),
   ac: { rooms:[], log:[], summary:[], stats:{}, loaded:false },
 };
 
@@ -1250,43 +1253,83 @@ function refreshBillForm(){
   if(keep && [...sel.options].some(o=>o.value===keep)) sel.value = keep;
   loadRoomIntoForm();
 }
+function billDraftKey(room){
+  return state.month + '|' + String(room);
+}
+
+function defaultBillDraft(room){
+  const rm = state.rooms.find(r=>String(r.room)===String(room)) || {};
+  return {
+    rent: Number(rm.rent ?? 0),
+    arrears: 0,
+    common: Number(rm.common ?? state.settings.commonFee ?? 0),
+    fine: Number(rm.fine ?? state.settings.fineFee ?? 0),
+    phone: Number(rm.phone ?? 0),
+    parking: Number(rm.parking ?? 0),
+    due: dueOf(state.month),
+  };
+}
+
+function getBillDraft(room){
+  const saved = state.billDrafts[billDraftKey(room)] || {};
+  return Object.assign(defaultBillDraft(room), saved);
+}
+
+function saveCurrentBillDraft(){
+  const room = $('billRoom').value;
+  if(!room) return;
+  state.billDrafts[billDraftKey(room)] = {
+    rent: Number($('fRent').value) || 0,
+    arrears: Number($('fArrears').value) || 0,
+    common: Number($('fCommon').value) || 0,
+    fine: Number($('fFine').value) || 0,
+    phone: Number($('fPhone').value) || 0,
+    parking: Number($('fParking').value) || 0,
+    due: $('fDue').value || dueOf(state.month),
+  };
+  store.set('billDrafts', state.billDrafts);
+}
+
 function loadRoomIntoForm(){
-  const rm = state.rooms.find(r=>r.room===$('billRoom').value) || {};
-  $('fRent').value    = rm.rent ?? 0;
-  $('fCommon').value  = rm.common ?? state.settings.commonFee;
-  $('fFine').value    = rm.fine ?? state.settings.fineFee ?? 0;
-  $('fPhone').value   = rm.phone ?? 0;
-  $('fParking').value = rm.parking ?? 0;
-  $('fArrears').value = 0;
-  $('fDue').value = dueOf(state.month);
-  renderBill(); renderBillHistory();
+  const room = $('billRoom').value;
+  if(!room) return;
+  const d = getBillDraft(room);
+  $('fRent').value    = d.rent;
+  $('fCommon').value  = d.common;
+  $('fFine').value    = d.fine;
+  $('fPhone').value   = d.phone;
+  $('fParking').value = d.parking;
+  $('fArrears').value = d.arrears;
+  $('fDue').value     = d.due;
+  renderBill();
+  renderBillHistory();
 }
 
 function billData(room){
-  const rm = state.rooms.find(r=>r.room===room)||{};
-  const single = room===$('billRoom').value;
-  const num = id => Number($(id).value)||0;
+  room = String(room);
+  const rm = state.rooms.find(r=>String(r.room)===room)||{};
+  const draft = getBillDraft(room);
   const w = unitsBilled(room,'water'), e = unitsBilled(room,'elec');
   const prev = state.prevReadings[room]||{}, cur = state.readings[room]||{};
   const t = activeTenantOf(room);
   const items = [
-    {name:'ค่าเช่าห้อง', key:'ค่าเช่าห้อง', amt: single? num('fRent') : (rm.rent||0)},
+    {name:'ค่าเช่าห้อง', key:'ค่าเช่าห้อง', amt:Number(draft.rent)||0},
     {name:'ค่าน้ำประปา'+(w.minApplied?' *':''), key:'ค่าน้ำประปา',
       p:prev.water, c:cur.water, u:w.billed, amt:(w.billed||0)*state.settings.waterRate},
     {name:'ค่าไฟฟ้า'+(e.minApplied?' *':''), key:'ค่าไฟฟ้า',
       p:prev.elec, c:cur.elec, u:e.billed, amt:(e.billed||0)*state.settings.elecRate},
-    {name:'ค่าส่วนกลาง', key:'ค่าส่วนกลาง', amt: single? num('fCommon') : (rm.common ?? state.settings.commonFee)},
-    {name:'ค่าปรับ', key:'ค่าปรับ', amt: single? num('fFine') : (rm.fine ?? state.settings.fineFee ?? 0), hideIfZero:true},
-    {name:'ค่าโทรศัพท์', key:'ค่าโทรศัพท์', amt: single? num('fPhone') : (rm.phone||0), hideIfZero:true},
-    {name:'ค่าที่จอดรถ', key:'ค่าที่จอดรถ', amt: single? num('fParking') : (rm.parking||0), hideIfZero:true},
-    {name:'ยอดค้างชำระเดิม', key:'ยอดค้างชำระเดิม', amt: single? num('fArrears') : 0, hideIfZero:true},
+    {name:'ค่าส่วนกลาง', key:'ค่าส่วนกลาง', amt:Number(draft.common)||0},
+    {name:'ค่าปรับ', key:'ค่าปรับ', amt:Number(draft.fine)||0, hideIfZero:true},
+    {name:'ค่าโทรศัพท์', key:'ค่าโทรศัพท์', amt:Number(draft.phone)||0, hideIfZero:true},
+    {name:'ค่าที่จอดรถ', key:'ค่าที่จอดรถ', amt:Number(draft.parking)||0, hideIfZero:true},
+    {name:'ยอดค้างชำระเดิม', key:'ยอดค้างชำระเดิม', amt:Number(draft.arrears)||0, hideIfZero:true},
   ];
   const total = items.reduce((s,i)=>s+i.amt, 0);
   const [y,m] = state.month.split('-');
   return {room, type: rm.type||'พัดลม', tenant: t? tenantName(t) : '',
     items, total, minApplied: w.minApplied||e.minApplied,
     wMin:w.minApplied, eMin:e.minApplied,
-    no:`INV-${+y+543}${m}-${room}`, due: single? ($('fDue').value||dueOf(state.month)) : dueOf(state.month)};
+    no:`INV-${+y+543}${m}-${room}`, due:draft.due||dueOf(state.month)};
 }
 
 function renderBill(room){
@@ -1374,8 +1417,6 @@ async function downloadAllPNGZip(){
   try{
     for(let i = 0; i < rooms.length; i++){
       const room = String(rooms[i].room);
-      $('billRoom').value = room;
-      loadRoomIntoForm();
       renderBill(room);
       await sleep(80);
       const canvas = await captureBill();
@@ -1390,10 +1431,7 @@ async function downloadAllPNGZip(){
     URL.revokeObjectURL(a.href);
     toast('ดาวน์โหลด PNG ทุกห้องเป็น ZIP แล้ว ✓');
   }catch(e){ toast('สร้างรูปบิลไม่สำเร็จ: ' + e.message); }
-  if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
-    $('billRoom').value = keepRoom;
-    loadRoomIntoForm();
-  }
+  if(keepRoom) renderBill(keepRoom);
   $('btnAllPNG').disabled = false;
 }
 
@@ -1413,8 +1451,6 @@ async function downloadAllPDF(){
     for(let i = 0; i < rooms.length; i++){
       const room = String(rooms[i].room);
       if(i > 0 && i % 2 === 0) pdf.addPage();
-      $('billRoom').value = room;
-      loadRoomIntoForm();
       renderBill(room);
       await sleep(80);
       const canvas = await captureBill();
@@ -1429,10 +1465,7 @@ async function downloadAllPDF(){
     pdf.save(`บิลรวมทุกห้อง_2ใบต่อหน้า_${state.month}.pdf`);
     toast('สร้าง PDF รวมแบบ 2 ใบต่อหน้าแล้ว ✓');
   }catch(e){ toast('สร้าง PDF ไม่สำเร็จ: ' + e.message); }
-  if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
-    $('billRoom').value = keepRoom;
-    loadRoomIntoForm();
-  }
+  if(keepRoom) renderBill(keepRoom);
   $('btnAllPDF').disabled = false;
 }
 async function saveBillToSheet(){
@@ -1829,7 +1862,10 @@ $('monthInput').addEventListener('change', async e=>{
 $('btnSaveReadings').addEventListener('click', saveReadings);
 $('billRoom').addEventListener('change', loadRoomIntoForm);
 ['fRent','fArrears','fCommon','fFine','fPhone','fParking','fDue']
-  .forEach(id=>$(id).addEventListener('input', ()=>renderBill()));
+  .forEach(id=>$(id).addEventListener('input', ()=>{
+    saveCurrentBillDraft();
+    renderBill();
+  }));
 $('btnPNG').addEventListener('click', downloadPNG);
 $('btnPDF').addEventListener('click', downloadPDF);
 $('btnAllPNG').addEventListener('click', downloadAllPNGZip);
