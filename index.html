@@ -199,36 +199,37 @@ table.tbl tr:hover td{background:#f7f9fb}
   background:#fff
 }
 .summary-paper{
-  width:794px;min-height:1123px;background:#fff;color:#12233a;padding:42px 48px 38px;
-  font-family:'Sarabun',sans-serif;display:flex;flex-direction:column;line-height:1.35
+  width:794px;min-height:1123px;background:#fff;color:#12233a;padding:18px 30px 16px;
+  font-family:'Sarabun',sans-serif;display:flex;flex-direction:column;line-height:1.22
 }
-.summary-paper + .summary-paper{margin-top:24px}
-.summary-head{text-align:center;padding-bottom:14px;border-bottom:2px solid #12233a;margin-bottom:18px}
-.summary-logo{width:38px;height:34px;margin:0 auto 4px;color:#12233a}
-.summary-logo svg{width:38px;height:34px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.summary-brand{font-size:26px;font-weight:700;line-height:1.1}
-.summary-brand small{display:block;font-size:11px;font-weight:500;letter-spacing:3px;color:#5b6b7f;margin-top:4px}
-.summary-title{font-size:22px;font-weight:700;margin-top:14px}
-.summary-month{font-size:15px;color:#5b6b7f;margin-top:3px}
-.summary-note{font-size:11.5px;color:#5b6b7f;margin:-6px 0 10px}
-.summary-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12.7px}
-.summary-table th{background:#12233a;color:#fff;padding:7px 6px;border:1px solid #12233a;font-weight:600;text-align:left;white-space:nowrap}
-.summary-table td{padding:6px;border:1px solid #dbe3ee;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-paper + .summary-paper{margin-top:12px}
+/* Header is deliberately compact so the table can use a larger, elder-friendly font. */
+.summary-head{text-align:center;padding-bottom:7px;border-bottom:2px solid #12233a;margin-bottom:9px}
+.summary-logo{width:27px;height:24px;margin:0 auto 1px;color:#12233a}
+.summary-logo svg{width:27px;height:24px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.summary-brand{font-size:19px;font-weight:700;line-height:1.05}
+.summary-brand small{display:block;font-size:8.5px;font-weight:500;letter-spacing:2.2px;color:#5b6b7f;margin-top:1px}
+.summary-title{font-size:23px;font-weight:700;margin-top:6px;line-height:1.08}
+.summary-month{font-size:17px;font-weight:600;color:#40506a;margin-top:2px}
+.summary-note{font-size:12.5px;color:#5b6b7f;margin:0 0 6px;line-height:1.2}
+.summary-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:15px;line-height:1.15}
+.summary-table th{background:#12233a;color:#fff;padding:6px 5px;border:1px solid #12233a;font-size:14px;font-weight:700;text-align:left;white-space:nowrap}
+.summary-table td{padding:5px;border:1px solid #dbe3ee;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .summary-table tbody tr:nth-child(even) td{background:#f7f9fb}
 .summary-table td.num,.summary-table th.num{text-align:right;font-variant-numeric:tabular-nums}
 .summary-table td.center,.summary-table th.center{text-align:center}
-.summary-table tfoot td{background:#e7eef6;font-weight:700;border-top:2px solid #12233a;padding:8px 6px}
-.summary-vacant{color:#b45309;font-weight:600}
-.summary-office{color:#5b6b7f;font-weight:600}
-.summary-bottom{margin-top:auto;padding-top:14px}
-.summary-total-card{display:flex;justify-content:space-between;align-items:center;background:#12233a;color:#fff;border-radius:9px;padding:12px 16px}
-.summary-total-card span{font-size:15px;font-weight:600}
-.summary-total-card b{font-size:23px;font-variant-numeric:tabular-nums}
-.summary-subtotals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
-.summary-subtotal{border:1px solid #dbe3ee;background:#f7f9fb;border-radius:8px;padding:9px 11px}
-.summary-subtotal span{display:block;font-size:11px;color:#5b6b7f}
-.summary-subtotal b{display:block;font-size:16px;margin-top:2px;font-variant-numeric:tabular-nums}
-.summary-footer{font-size:10.5px;color:#7b8797;text-align:right;margin-top:10px}
+.summary-table tfoot td{background:#e7eef6;font-size:15.5px;font-weight:700;border-top:2px solid #12233a;padding:6px 5px}
+.summary-vacant{color:#b45309;font-weight:700}
+.summary-office{color:#5b6b7f;font-weight:700}
+.summary-bottom{margin-top:auto;padding-top:7px}
+.summary-total-card{display:flex;justify-content:space-between;align-items:center;background:#12233a;color:#fff;border-radius:8px;padding:9px 13px}
+.summary-total-card span{font-size:17px;font-weight:700}
+.summary-total-card b{font-size:26px;font-variant-numeric:tabular-nums}
+.summary-subtotals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:5px}
+.summary-subtotal{border:1px solid #dbe3ee;background:#f7f9fb;border-radius:7px;padding:7px 9px}
+.summary-subtotal span{display:block;font-size:12.5px;color:#5b6b7f;font-weight:600}
+.summary-subtotal b{display:block;font-size:18px;margin-top:1px;font-variant-numeric:tabular-nums}
+.summary-footer{font-size:9.5px;color:#7b8797;text-align:right;margin-top:3px;line-height:1}
 
 /* ---------- ประวัติบิล ---------- */
 .hist-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eef2f6;font-size:13.5px}
