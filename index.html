@@ -192,6 +192,44 @@ table.tbl tr:hover td{background:#f7f9fb}
   #billPaper .bp-month-box{border-left:none;border-top:1px solid #d7dee8;padding-left:0;padding-top:12px;margin-top:10px}
 }
 
+
+/* ---------- หน้าสรุปผู้บริหารสำหรับ PDF ---------- */
+.pdf-summary-host{
+  position:fixed;left:-12000px;top:0;width:794px;z-index:9999;pointer-events:none;
+  background:#fff
+}
+.summary-paper{
+  width:794px;min-height:1123px;background:#fff;color:#12233a;padding:42px 48px 38px;
+  font-family:'Sarabun',sans-serif;display:flex;flex-direction:column;line-height:1.35
+}
+.summary-paper + .summary-paper{margin-top:24px}
+.summary-head{text-align:center;padding-bottom:14px;border-bottom:2px solid #12233a;margin-bottom:18px}
+.summary-logo{width:38px;height:34px;margin:0 auto 4px;color:#12233a}
+.summary-logo svg{width:38px;height:34px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.summary-brand{font-size:26px;font-weight:700;line-height:1.1}
+.summary-brand small{display:block;font-size:11px;font-weight:500;letter-spacing:3px;color:#5b6b7f;margin-top:4px}
+.summary-title{font-size:22px;font-weight:700;margin-top:14px}
+.summary-month{font-size:15px;color:#5b6b7f;margin-top:3px}
+.summary-note{font-size:11.5px;color:#5b6b7f;margin:-6px 0 10px}
+.summary-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12.7px}
+.summary-table th{background:#12233a;color:#fff;padding:7px 6px;border:1px solid #12233a;font-weight:600;text-align:left;white-space:nowrap}
+.summary-table td{padding:6px;border:1px solid #dbe3ee;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-table tbody tr:nth-child(even) td{background:#f7f9fb}
+.summary-table td.num,.summary-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.summary-table td.center,.summary-table th.center{text-align:center}
+.summary-table tfoot td{background:#e7eef6;font-weight:700;border-top:2px solid #12233a;padding:8px 6px}
+.summary-vacant{color:#b45309;font-weight:600}
+.summary-office{color:#5b6b7f;font-weight:600}
+.summary-bottom{margin-top:auto;padding-top:14px}
+.summary-total-card{display:flex;justify-content:space-between;align-items:center;background:#12233a;color:#fff;border-radius:9px;padding:12px 16px}
+.summary-total-card span{font-size:15px;font-weight:600}
+.summary-total-card b{font-size:23px;font-variant-numeric:tabular-nums}
+.summary-subtotals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+.summary-subtotal{border:1px solid #dbe3ee;background:#f7f9fb;border-radius:8px;padding:9px 11px}
+.summary-subtotal span{display:block;font-size:11px;color:#5b6b7f}
+.summary-subtotal b{display:block;font-size:16px;margin-top:2px;font-variant-numeric:tabular-nums}
+.summary-footer{font-size:10.5px;color:#7b8797;text-align:right;margin-top:10px}
+
 /* ---------- ประวัติบิล ---------- */
 .hist-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eef2f6;font-size:13.5px}
 .hist-item:last-child{border-bottom:none}
@@ -335,7 +373,7 @@ table.tbl tr:hover td{background:#f7f9fb}
         </div>
         <div class="btnrow">
           <button class="btn btn-ghost" id="btnAllPNG">🖼 PNG ทุกห้อง (ZIP)</button>
-          <button class="btn btn-ghost" id="btnAllPDF">📚 PDF รวมทุกห้อง 2 ใบ/หน้า</button>
+          <button class="btn btn-ghost" id="btnAllPDF">📚 PDF สรุป + บิลทุกห้อง</button>
           <button class="btn btn-ghost" id="btnSaveBill">💾 บันทึกยอดบิลลง Sheet</button>
         </div>
       </div>
@@ -707,6 +745,66 @@ table.tbl tr:hover td{background:#f7f9fb}
       <button class="btn btn-ghost" onclick="document.getElementById('acRoomModalBg').classList.remove('show')">ยกเลิก</button>
     </div>
   </div>
+</div>
+
+
+<!-- ===== หน้าสรุปผู้บริหารสำหรับ PDF (ซ่อนไว้นอกจอ) ===== -->
+<div id="pdfSummaryHost" class="pdf-summary-host" aria-hidden="true">
+  <section id="summaryAmountPaper" class="summary-paper">
+    <div class="summary-head">
+      <div class="summary-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 40"><path d="M14 36V10h20v26M9 36h30M20 16h2M26 16h2M20 22h2M26 22h2M20 28h2M26 28h2M32 18h6v18M10 20h4"/></svg>
+      </div>
+      <div class="summary-brand">กนกรัศม์<small>KANOKRAS APARTMENT</small></div>
+      <div class="summary-title">สรุปยอดเรียกเก็บรายห้อง</div>
+      <div class="summary-month" id="sum1Month">—</div>
+    </div>
+    <div class="summary-note">หมายเหตุ: ห้อง 101–102 แสดงเป็นสำนักงานและไม่รวมในยอดเรียกเก็บรวม</div>
+    <table class="summary-table">
+      <colgroup>
+        <col style="width:10%"><col style="width:16%"><col style="width:19%"><col style="width:21%"><col style="width:19%"><col style="width:15%">
+      </colgroup>
+      <thead><tr>
+        <th class="center">ห้อง</th><th>ประเภท</th><th>ชื่อ</th><th>นามสกุล</th><th class="num">ยอดเรียกเก็บ</th><th class="center">หมายเหตุ</th>
+      </tr></thead>
+      <tbody id="sum1Rows"></tbody>
+      <tfoot><tr><td colspan="4" class="num">รวมยอดเรียกเก็บ</td><td class="num" id="sum1Total">0.00</td><td>บาท</td></tr></tfoot>
+    </table>
+    <div class="summary-bottom">
+      <div class="summary-total-card"><span>ยอดเรียกเก็บรวมประจำเดือน</span><b id="sum1Grand">0.00 บาท</b></div>
+      <div class="summary-footer" id="sum1Generated"></div>
+    </div>
+  </section>
+
+  <section id="summaryUtilityPaper" class="summary-paper">
+    <div class="summary-head">
+      <div class="summary-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 40"><path d="M14 36V10h20v26M9 36h30M20 16h2M26 16h2M20 22h2M26 22h2M20 28h2M26 28h2M32 18h6v18M10 20h4"/></svg>
+      </div>
+      <div class="summary-brand">กนกรัศม์<small>KANOKRAS APARTMENT</small></div>
+      <div class="summary-title">สรุปค่าน้ำและค่าไฟรายห้อง</div>
+      <div class="summary-month" id="sum2Month">—</div>
+    </div>
+    <div class="summary-note">ยอดค่าน้ำและค่าไฟคำนวณตามมิเตอร์ อัตราค่าบริการ และหน่วยขั้นต่ำของเดือนที่เลือก</div>
+    <table class="summary-table">
+      <colgroup>
+        <col style="width:10%"><col style="width:16%"><col style="width:20%"><col style="width:22%"><col style="width:16%"><col style="width:16%">
+      </colgroup>
+      <thead><tr>
+        <th class="center">ห้อง</th><th>ประเภท</th><th>ชื่อ</th><th>นามสกุล</th><th class="num">ค่าน้ำ</th><th class="num">ค่าไฟ</th>
+      </tr></thead>
+      <tbody id="sum2Rows"></tbody>
+      <tfoot><tr><td colspan="4" class="num">รวม</td><td class="num" id="sum2WaterTotal">0.00</td><td class="num" id="sum2ElecTotal">0.00</td></tr></tfoot>
+    </table>
+    <div class="summary-bottom">
+      <div class="summary-subtotals">
+        <div class="summary-subtotal"><span>รวมค่าน้ำ</span><b id="sum2WaterCard">0.00 บาท</b></div>
+        <div class="summary-subtotal"><span>รวมค่าไฟ</span><b id="sum2ElecCard">0.00 บาท</b></div>
+        <div class="summary-subtotal"><span>รวมค่าสาธารณูปโภค</span><b id="sum2Grand">0.00 บาท</b></div>
+      </div>
+      <div class="summary-footer" id="sum2Generated"></div>
+    </div>
+  </section>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1406,6 +1504,135 @@ function exportRooms(){
   });
 }
 
+
+function sortedRoomRecords(){
+  return state.rooms.slice().sort((a,b)=>
+    String(a.room).localeCompare(String(b.room), 'th', {numeric:true})
+  );
+}
+
+function billItemAmount(bill, key){
+  const item = bill.items.find(i => (i.key || i.name) === key);
+  return item ? Number(item.amt) || 0 : 0;
+}
+
+function generatedStamp(){
+  const d = new Date();
+  return 'จัดทำเมื่อ ' + d.toLocaleDateString('th-TH', {
+    day:'2-digit', month:'2-digit', year:'numeric'
+  }) + ' ' + d.toLocaleTimeString('th-TH', {
+    hour:'2-digit', minute:'2-digit'
+  }) + ' น.';
+}
+
+function buildExecutiveSummaries(){
+  saveCurrentBillDraft();
+  const officeRooms = ['101','102'];
+  let invoiceTotal = 0;
+  let waterTotal = 0;
+  let elecTotal = 0;
+  const amountRows = [];
+  const utilityRows = [];
+
+  sortedRoomRecords().forEach(rm => {
+    const room = String(rm.room);
+    const tenant = activeTenantOf(room);
+    const occupied = !!tenant;
+    const isOffice = officeRooms.includes(room);
+    const bill = billData(room);
+
+    let amountText = '—';
+    let remark = '';
+    let remarkClass = '';
+    if(isOffice){
+      remark = 'สำนักงาน';
+      remarkClass = 'summary-office';
+    } else if(!occupied){
+      remark = 'ว่าง';
+      remarkClass = 'summary-vacant';
+    } else {
+      amountText = fmt(bill.total);
+      invoiceTotal += Number(bill.total) || 0;
+    }
+
+    amountRows.push(`<tr>
+      <td class="center"><b>${esc(room)}</b></td>
+      <td>${esc(rm.type || typeOf(room) || '-')}</td>
+      <td>${occupied ? esc(tenant.firstName || '') : '—'}</td>
+      <td>${occupied ? esc(tenant.lastName || '') : '—'}</td>
+      <td class="num">${amountText}</td>
+      <td class="center ${remarkClass}">${remark}</td>
+    </tr>`);
+
+    let waterText = '—';
+    let elecText = '—';
+    if(occupied && !isOffice){
+      const water = billItemAmount(bill, 'ค่าน้ำประปา');
+      const elec = billItemAmount(bill, 'ค่าไฟฟ้า');
+      waterText = fmt(water);
+      elecText = fmt(elec);
+      waterTotal += water;
+      elecTotal += elec;
+    }
+
+    utilityRows.push(`<tr>
+      <td class="center"><b>${esc(room)}</b></td>
+      <td>${esc(rm.type || typeOf(room) || '-')}</td>
+      <td>${occupied ? esc(tenant.firstName || '') : '—'}</td>
+      <td>${occupied ? esc(tenant.lastName || '') : '—'}</td>
+      <td class="num">${waterText}</td>
+      <td class="num">${elecText}</td>
+    </tr>`);
+  });
+
+  $('sum1Month').textContent = 'ประจำเดือน ' + thaiMonth(state.month);
+  $('sum1Rows').innerHTML = amountRows.join('');
+  $('sum1Total').textContent = fmt(invoiceTotal);
+  $('sum1Grand').textContent = fmt(invoiceTotal) + ' บาท';
+  $('sum1Generated').textContent = generatedStamp();
+
+  $('sum2Month').textContent = 'ประจำเดือน ' + thaiMonth(state.month);
+  $('sum2Rows').innerHTML = utilityRows.join('');
+  $('sum2WaterTotal').textContent = fmt(waterTotal);
+  $('sum2ElecTotal').textContent = fmt(elecTotal);
+  $('sum2WaterCard').textContent = fmt(waterTotal) + ' บาท';
+  $('sum2ElecCard').textContent = fmt(elecTotal) + ' บาท';
+  $('sum2Grand').textContent = fmt(waterTotal + elecTotal) + ' บาท';
+  $('sum2Generated').textContent = generatedStamp();
+}
+
+async function captureSummaryPaper(id){
+  if(document.fonts && document.fonts.ready) await document.fonts.ready;
+  return html2canvas($(id), {
+    scale:2,
+    backgroundColor:'#ffffff',
+    useCORS:true,
+    logging:false,
+    windowWidth:794,
+    windowHeight:1123
+  });
+}
+
+function addCanvasToCurrentPdfPage(pdf, canvas, margin=6){
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const ratio = canvas.height / canvas.width;
+  let w = pageW - margin * 2;
+  let h = w * ratio;
+  if(h > pageH - margin * 2){
+    h = pageH - margin * 2;
+    w = h / ratio;
+  }
+  pdf.addImage(
+    canvas.toDataURL('image/jpeg', 0.96),
+    'JPEG',
+    (pageW - w) / 2,
+    (pageH - h) / 2,
+    w,
+    h
+  );
+}
+
 async function downloadAllPNGZip(){
   if(typeof JSZip === 'undefined'){ toast('ยังโหลด JSZip ไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ'); return; }
   const rooms = exportRooms();
@@ -1438,19 +1665,43 @@ async function downloadAllPNGZip(){
 async function downloadAllPDF(){
   const rooms = exportRooms();
   if(!rooms.length){ toast('ไม่มีห้องที่ต้องสร้าง PDF'); return; }
-  toast('กำลังสร้าง PDF รวมทุกห้องแบบ 2 ใบต่อหน้า…');
+
+  toast('กำลังสร้างหน้าสรุปและบิลทุกห้อง…');
   $('btnAllPDF').disabled = true;
   const keepRoom = $('billRoom').value;
-  const pdf = new jspdf.jsPDF({unit:'mm', format:'a4', orientation:'landscape'});
-  const margin = 8, gap = 6;
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const slotW = (pageW - (margin * 2) - gap) / 2;
-  const slotH = pageH - (margin * 2);
+
   try{
+    buildExecutiveSummaries();
+    await sleep(60);
+
+    // หน้า 1: สรุปยอดเรียกเก็บ (A4 แนวตั้ง)
+    const summary1 = await captureSummaryPaper('summaryAmountPaper');
+    const pdf = new jspdf.jsPDF({unit:'mm', format:'a4', orientation:'portrait'});
+    addCanvasToCurrentPdfPage(pdf, summary1, 5);
+
+    // หน้า 2: สรุปค่าน้ำและค่าไฟ (A4 แนวตั้ง)
+    const summary2 = await captureSummaryPaper('summaryUtilityPaper');
+    pdf.addPage('a4', 'portrait');
+    addCanvasToCurrentPdfPage(pdf, summary2, 5);
+
+    // หน้า 3 เป็นต้นไป: บิล 2 ใบต่อหน้า (A4 แนวนอน)
+    pdf.addPage('a4', 'landscape');
+    const margin = 8, gap = 6;
+    let pageW = pdf.internal.pageSize.getWidth();
+    let pageH = pdf.internal.pageSize.getHeight();
+    let slotW = (pageW - (margin * 2) - gap) / 2;
+    let slotH = pageH - (margin * 2);
+
     for(let i = 0; i < rooms.length; i++){
       const room = String(rooms[i].room);
-      if(i > 0 && i % 2 === 0) pdf.addPage();
+      if(i > 0 && i % 2 === 0){
+        pdf.addPage('a4', 'landscape');
+        pageW = pdf.internal.pageSize.getWidth();
+        pageH = pdf.internal.pageSize.getHeight();
+        slotW = (pageW - (margin * 2) - gap) / 2;
+        slotH = pageH - (margin * 2);
+      }
+
       renderBill(room);
       await sleep(80);
       const canvas = await captureBill();
@@ -1462,11 +1713,16 @@ async function downloadAllPDF(){
       const y = margin + (slotH - h) / 2;
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, y, w, h);
     }
-    pdf.save(`บิลรวมทุกห้อง_2ใบต่อหน้า_${state.month}.pdf`);
-    toast('สร้าง PDF รวมแบบ 2 ใบต่อหน้าแล้ว ✓');
-  }catch(e){ toast('สร้าง PDF ไม่สำเร็จ: ' + e.message); }
-  if(keepRoom) renderBill(keepRoom);
-  $('btnAllPDF').disabled = false;
+
+    pdf.save(`สรุปและบิลทุกห้อง_${state.month}.pdf`);
+    toast('สร้าง PDF พร้อมหน้าสรุป 2 หน้าแล้ว ✓');
+  }catch(e){
+    console.error(e);
+    toast('สร้าง PDF ไม่สำเร็จ: ' + e.message);
+  } finally {
+    if(keepRoom) renderBill(keepRoom);
+    $('btnAllPDF').disabled = false;
+  }
 }
 async function saveBillToSheet(){
   const d = renderBill();
