@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>กนกรัศม์ — Apartment Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --ink:#1b2a41; --teal:#0e7c66; --teal-dark:#0a5f4e; --amber:#b45309; --red:#b3261e;
+  --bg:#f2f4f7; --paper:#ffffff; --line:#e3e8ef; --muted:#5b6b7f; --ok:#0e7c66;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:15px}
+
+/* ---------- โครงหลัก ---------- */
+header.app{background:var(--ink);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header.app h1{font-size:18px;font-weight:700;letter-spacing:.2px;cursor:pointer}
+header.app .sub{font-size:12px;opacity:.75}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.month-pick{display:flex;align-items:center;gap:8px}
+.month-pick input{border:none;border-radius:8px;padding:7px 10px;background:#2b3c56;color:#fff}
+.month-pick input::-webkit-calendar-picker-indicator{filter:invert(1)}
+#btnHome{background:#2b3c56;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:14px;font-weight:600;display:none;align-items:center;gap:6px}
+#btnHome:hover{background:#39507000;background:#3a4f6e}
+#connDot{width:9px;height:9px;border-radius:50%;background:#8a97a8;display:inline-block}
+#connDot.on{background:#3ddc97}
+
+.module{display:none}
+.module.active{display:block}
+
+nav.tabs{display:flex;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
+  overflow-x:auto;-webkit-overflow-scrolling:touch}
+nav.tabs button{flex:1;min-width:86px;padding:12px 6px;border:none;background:none;font-size:14px;font-weight:600;
+  color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs button.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+main{max-width:1100px;margin:0 auto;padding:16px}
+.tabpage{display:none}
+.tabpage.active{display:block}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;margin-bottom:10px}
+.hint{font-size:13px;color:var(--muted)}
+.btn{border:none;border-radius:9px;padding:10px 16px;font-size:15px;font-weight:600}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-ghost{background:#eef2f6;color:var(--ink)}
+.btn-ghost:hover{background:#e2e8f0}
+.btn-warn{background:#fdf0e5;color:var(--amber)}
+.btn-danger{background:#fdeaea;color:var(--red)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:5px 10px;font-size:13px;border-radius:7px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.badge.green{background:#e2f4ef;color:var(--teal)}
+.badge.gray{background:#eef2f6;color:var(--muted)}
+.badge.amber{background:#fdf0e5;color:var(--amber)}
+.badge.red{background:#fdeaea;color:var(--red)}
+.badge.type{background:#e7f0f6;color:#1f4e6b}
+.pill{font-size:11px;padding:2px 8px;border-radius:6px;background:#eef2f6;color:var(--muted)}
+
+/* ---------- หน้าหลัก (Home) ---------- */
+.home-wrap{max-width:860px;margin:0 auto;padding:34px 16px 40px}
+.home-head{text-align:center;margin-bottom:26px}
+.home-head .hh-logo{width:44px;height:38px;margin:0 auto 8px;color:var(--ink)}
+.home-head .hh-logo svg{width:44px;height:38px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.home-head h2{font-size:30px;font-weight:700;line-height:1.15}
+.home-head .en{display:block;font-size:12px;font-weight:500;letter-spacing:3.2px;color:var(--muted);margin-top:5px}
+.home-head .orn{display:flex;align-items:center;justify-content:center;gap:10px;margin:12px auto 0;color:var(--ink)}
+.home-head .orn:before,.home-head .orn:after{content:'';display:block;width:72px;height:1px;background:var(--ink);opacity:.55}
+.home-head .orn span{width:7px;height:7px;background:var(--ink);transform:rotate(45deg);display:block}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+@media(max-width:640px){.home-grid{grid-template-columns:1fr}}
+.home-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 18px;text-align:left;
+  display:flex;gap:14px;align-items:flex-start;transition:box-shadow .15s,transform .15s;box-shadow:0 1px 2px rgba(27,42,65,.05)}
+.home-card:hover{box-shadow:0 8px 22px rgba(27,42,65,.12);transform:translateY(-2px)}
+.home-card .ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:23px;flex:0 0 auto}
+.home-card.c-bill .ic{background:#e2f4ef}
+.home-card.c-ac .ic{background:#e7f0f6}
+.home-card.c-tenant .ic{background:#fdf0e5}
+.home-card.c-set .ic{background:#eef2f6}
+.home-card b{font-size:17px;display:block;margin-bottom:3px}
+.home-card small{font-size:13px;color:var(--muted);line-height:1.45;display:block}
+.home-foot{text-align:center;margin-top:26px;font-size:12.5px;color:var(--muted)}
+
+/* ---------- Dashboard ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stat .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+.stat.warn .v{color:var(--amber)}
+.stat.bad .v{color:var(--red)}
+.stat.good .v{color:var(--teal)}
+.alert-item{display:flex;gap:8px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;flex-wrap:wrap}
+.alert-item:last-child{border-bottom:none}
+
+/* ---------- ตารางทั่วไป ---------- */
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+table.tbl th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;padding:8px 8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.tbl td{padding:8px;border-bottom:1px solid #eef2f6;white-space:nowrap}
+table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.tbl tr:hover td{background:#f7f9fb}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar select,.toolbar input{border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+
+/* ---------- แท็บมิเตอร์ ---------- */
+.rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.room-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px}
+.room-card .rc-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.room-card .rc-head b{font-size:17px}
+.room-card .rc-head span{font-size:12px;color:var(--muted)}
+.meter-row{display:grid;grid-template-columns:20px 1fr 1fr 58px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.meter-row .ico{text-align:center}
+.meter-row .prev{color:var(--muted);text-align:right;padding-right:4px}
+.meter-row input{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums}
+.meter-row input:focus{outline:2px solid var(--teal);border-color:transparent}
+.meter-row .units{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.meter-labels{display:grid;grid-template-columns:20px 1fr 1fr 58px;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px}
+.meter-labels div{text-align:right}
+.rc-warn{font-size:12px;color:var(--amber);margin-top:4px}
+.rc-warn .red{color:var(--red)}
+.savebar{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:14px 0 6px;display:flex;justify-content:center}
+.photo-chip{display:inline-flex;align-items:center;gap:5px;background:#eef2f6;border-radius:8px;padding:4px 10px;font-size:13px;margin:3px 4px 0 0;text-decoration:none;color:var(--ink)}
+
+/* ---------- แท็บออกบิล ---------- */
+.bill-layout{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media(max-width:820px){.bill-layout{grid-template-columns:1fr}}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.field input,.field select{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.field input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+.fields-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ---------- ใบแจ้งยอด ---------- */
+.bill-stage{display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:4px 0 18px}
+#billPaper{
+  width:680px;background:#fff;color:#12233a;padding:26px 34px;border:1px solid #d8e0ea;border-radius:2px;
+  font-family:'Sarabun',sans-serif;box-shadow:0 8px 28px rgba(27,42,65,.12);line-height:1.35
+}
+#billPaper .bp-top{text-align:center;padding-bottom:14px;border-bottom:none}
+#billPaper .bp-logo{width:34px;height:30px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;color:#12233a}
+#billPaper .bp-logo svg{width:34px;height:30px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#billPaper .bp-apt{font-size:27px;line-height:1.1;font-weight:700;letter-spacing:.3px;color:#12233a}
+#billPaper .bp-apt small{display:block;font-size:12px;font-weight:500;color:#40506a;letter-spacing:3.2px;margin-top:4px}
+#billPaper .bp-orn{display:flex;align-items:center;justify-content:center;gap:10px;margin:9px auto 8px;color:#12233a}
+#billPaper .bp-orn:before,#billPaper .bp-orn:after{content:'';display:block;width:72px;height:1px;background:#12233a;opacity:.65}
+#billPaper .bp-orn span{width:7px;height:7px;background:#12233a;transform:rotate(45deg);display:block}
+#billPaper .bp-contact{display:flex;justify-content:center;gap:20px;align-items:center;font-size:13.5px;color:#12233a;flex-wrap:wrap}
+#billPaper .bp-contact b{font-weight:700}
+#billPaper .bp-invoice-card{position:relative;border:1px solid #d7dee8;border-radius:12px;margin-top:10px;padding:52px 18px 16px;background:#fbfcfe}
+#billPaper .bp-title-pill{position:absolute;left:14px;top:12px;background:#e7eef6;color:#1f3b58;font-size:18px;font-weight:700;line-height:1;padding:8px 16px 9px;border-radius:10px;box-shadow:none}
+#billPaper .bp-docno{position:absolute;right:18px;top:16px;font-size:12.5px;color:#12233a;font-variant-numeric:tabular-nums}
+#billPaper .bp-meta-grid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:stretch}
+#billPaper .bp-left-info{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:10px;row-gap:9px;align-items:start;min-width:0}
+#billPaper .bp-icon{width:31px;height:31px;border-radius:50%;background:#eef2f6;display:flex;align-items:center;justify-content:center;font-size:16px;color:#12233a;flex:0 0 auto}
+#billPaper .bp-label{font-size:11.5px;color:#5b6b7f;font-weight:600;margin-bottom:1px}
+#billPaper .bp-room-line{font-size:17px;font-weight:700;color:#12233a;white-space:normal;overflow-wrap:anywhere}
+#billPaper .bp-room-line small{font-size:13px;font-weight:500;color:#5b6b7f}
+#billPaper .bp-tenant-name{font-size:14.5px;font-weight:600;color:#12233a;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.35;border-bottom:1px dashed #c4cfdd;padding-bottom:6px;min-height:25px}
+#billPaper .bp-month-box{border-left:1px solid #d7dee8;padding-left:16px;display:flex;align-items:center;gap:10px;min-width:0}
+#billPaper .bp-month-text{min-width:0}
+#billPaper .bp-month-text .bp-label{margin-bottom:2px}
+#billPaper .bp-month-text b{font-size:20px;line-height:1.2;color:#12233a;white-space:normal;word-break:keep-all}
+#billPaper table{width:100%;border-collapse:separate;border-spacing:0;margin-top:16px;font-size:13.5px;border:1px solid #dfe6ef;border-radius:8px;overflow:hidden}
+#billPaper th{background:#12233a;color:#fff;font-size:12px;font-weight:600;text-align:right;padding:10px 8px;border-bottom:none;white-space:nowrap}
+#billPaper th:first-child{text-align:left;padding-left:14px}
+#billPaper td{padding:9px 8px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid #edf1f6;color:#12233a;background:#fff}
+#billPaper tr:last-child td{border-bottom:none}
+#billPaper td:first-child{text-align:left;padding-left:14px;font-weight:500}
+#billPaper .bp-total{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;margin-top:14px;background:#12233a;color:#fff;padding:13px 16px;border-radius:8px;box-shadow:0 5px 12px rgba(18,35,58,.16)}
+#billPaper .bp-total:before{content:'💼';width:34px;height:34px;border:1px solid rgba(255,255,255,.45);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px}
+#billPaper .bp-total span{font-size:18px;font-weight:700;border-left:1px solid rgba(255,255,255,.35);padding-left:14px}
+#billPaper .bp-total b{font-size:28px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+#billPaper .bp-foot{margin-top:12px;background:#f6f8fb;border:1px solid #dbe3ee;border-radius:8px;padding:10px 13px;font-size:15px;color:#12233a;text-align:left;font-weight:500}
+#billPaper .bp-foot:before{content:'📅';margin-right:8px}
+#billPaper .bp-min{font-size:11px;color:#5b6b7f;margin-top:7px;text-align:left}
+#billPaper .bp-pay{margin-top:14px;border-top:1px dashed #c7d0dd;padding:12px 4px 0 42px;font-size:12.5px;color:#39485c;white-space:pre-line;position:relative;line-height:1.45}
+#billPaper .bp-pay:before{content:'🏦';position:absolute;left:7px;top:10px;width:25px;height:25px;border-radius:50%;background:#eef2f6;display:flex;align-items:center;justify-content:center;font-size:14px}
+@media(max-width:760px){
+  #billPaper{width:100%;padding:22px 18px}
+  #billPaper .bp-meta-grid{grid-template-columns:1fr}
+  #billPaper .bp-month-box{border-left:none;border-top:1px solid #d7dee8;padding-left:0;padding-top:12px;margin-top:10px}
+}
+
+
+/* ---------- หน้าสรุปผู้บริหารสำหรับ PDF ---------- */
+.pdf-summary-host{
+  position:fixed;left:-12000px;top:0;width:794px;z-index:9999;pointer-events:none;
+  background:#fff
+}
+.summary-paper{
+  width:794px;min-height:1123px;background:#fff;color:#12233a;padding:18px 30px 16px;
+  font-family:'Sarabun',sans-serif;display:flex;flex-direction:column;line-height:1.22
+}
+.summary-paper + .summary-paper{margin-top:12px}
+/* Header is deliberately compact so the table can use a larger, elder-friendly font. */
+.summary-head{text-align:center;padding-bottom:7px;border-bottom:2px solid #12233a;margin-bottom:9px}
+.summary-logo{width:27px;height:24px;margin:0 auto 1px;color:#12233a}
+.summary-logo svg{width:27px;height:24px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.summary-brand{font-size:19px;font-weight:700;line-height:1.05}
+.summary-brand small{display:block;font-size:8.5px;font-weight:500;letter-spacing:2.2px;color:#5b6b7f;margin-top:1px}
+.summary-title{font-size:23px;font-weight:700;margin-top:6px;line-height:1.08}
+.summary-month{font-size:17px;font-weight:600;color:#40506a;margin-top:2px}
+.summary-note{font-size:12.5px;color:#5b6b7f;margin:0 0 6px;line-height:1.2}
+.summary-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:15px;line-height:1.15}
+.summary-table th{background:#12233a;color:#fff;padding:6px 5px;border:1px solid #12233a;font-size:14px;font-weight:700;text-align:left;white-space:nowrap}
+.summary-table td{padding:5px;border:1px solid #dbe3ee;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-table tbody tr:nth-child(even) td{background:#f7f9fb}
+.summary-table td.num,.summary-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+.summary-table td.center,.summary-table th.center{text-align:center}
+.summary-table tfoot td{background:#e7eef6;font-size:15.5px;font-weight:700;border-top:2px solid #12233a;padding:6px 5px}
+.summary-vacant{color:#b45309;font-weight:700}
+.summary-office{color:#5b6b7f;font-weight:700}
+.summary-bottom{margin-top:auto;padding-top:7px}
+.summary-total-card{display:flex;justify-content:space-between;align-items:center;background:#12233a;color:#fff;border-radius:8px;padding:9px 13px}
+.summary-total-card span{font-size:17px;font-weight:700}
+.summary-total-card b{font-size:26px;font-variant-numeric:tabular-nums}
+.summary-subtotals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:5px}
+.summary-subtotal{border:1px solid #dbe3ee;background:#f7f9fb;border-radius:7px;padding:7px 9px}
+.summary-subtotal span{display:block;font-size:12.5px;color:#5b6b7f;font-weight:600}
+.summary-subtotal b{display:block;font-size:18px;margin-top:1px;font-variant-numeric:tabular-nums}
+.summary-footer{font-size:9.5px;color:#7b8797;text-align:right;margin-top:3px;line-height:1}
+
+/* ---------- ประวัติบิล ---------- */
+.hist-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eef2f6;font-size:13.5px}
+.hist-item:last-child{border-bottom:none}
+
+/* ---------- Modal ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:24px 12px;overflow:auto}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:14px;padding:18px;width:100%;max-width:440px}
+.modal h3{font-size:16px;margin-bottom:12px}
+
+/* ---------- ตั้งค่า ---------- */
+.rates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+
+@media print{
+  body *{visibility:hidden}
+  #billPaper,#billPaper *{visibility:visible}
+  #billPaper{position:absolute;left:0;top:0;box-shadow:none;border:none}
+}
+
+/* ---------- Firebase Login ---------- */
+#authGate{position:fixed;inset:0;background:var(--bg);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px}
+#authGate.hidden{display:none}
+.auth-card{width:min(480px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px;box-shadow:0 12px 32px rgba(27,42,65,.12);text-align:center}
+.auth-card h2{font-size:28px;margin-bottom:4px}
+.auth-card .en{font-size:12px;letter-spacing:3px;color:var(--muted)}
+.auth-status{margin:18px 0;padding:12px;border-radius:10px;background:#f7f9fb;border:1px solid var(--line);font-size:14px;line-height:1.5}
+.auth-status.ok{background:#e2f4ef}
+.auth-status.bad{background:#fdeaea;color:var(--red)}
+.user-chip{display:flex;align-items:center;gap:8px;background:#2b3c56;color:#fff;padding:6px 9px;border-radius:9px;font-size:12px}
+.user-chip button{border:none;background:#425874;color:#fff;border-radius:7px;padding:5px 8px;font-size:12px}
+
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div class="auth-card">
+    <h2>กนกรัศม์</h2>
+    <div class="en">APARTMENT MANAGEMENT</div>
+    <div id="authGateStatus" class="auth-status">กำลังตรวจสอบการเข้าสู่ระบบ…</div>
+    <button class="btn btn-primary" id="authLoginBtn" style="display:none;width:100%">Sign in with Google</button>
+  </div>
+</div>
+
+
+<header class="app">
+  <div>
+    <h1 onclick="showModule('home')" title="กลับหน้าหลัก">กนกรัศม์ <span id="connDot" title="สถานะการเชื่อมต่อ"></span></h1>
+    <div class="sub">Apartment Management · บิล · ล้างแอร์ · ผู้พัก</div>
+  </div>
+  <div class="hd-right">
+    <div id="authUserChip" class="user-chip" style="display:none"><span id="authUserText"></span><button id="authLogoutBtn">Sign out</button></div>
+    <div class="month-pick" id="monthPickWrap" style="display:none">
+      <label style="font-size:13px">ประจำเดือน</label>
+      <input type="month" id="monthInput">
+    </div>
+    <button id="btnHome" onclick="showModule('home')">⌂ หน้าหลัก</button>
+  </div>
+</header>
+
+<!-- ═══════════════ หน้าหลัก ═══════════════ -->
+<section class="module active" id="module-home">
+  <div class="home-wrap">
+    <div class="home-head">
+      <div class="hh-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 40">
+          <path d="M14 36V10h20v26M9 36h30M20 16h2M26 16h2M20 22h2M26 22h2M20 28h2M26 28h2M32 18h6v18M10 20h4"/>
+        </svg>
+      </div>
+      <h2>กนกรัศม์<span class="en">APARTMENT MANAGEMENT</span></h2>
+      <div class="orn"><span></span></div>
+    </div>
+    <div class="home-grid">
+      <button class="home-card c-bill" onclick="showModule('bill')">
+        <span class="ic">🧾</span>
+        <span><b>บิลค่าเช่า</b>
+        <small>จัดการมิเตอร์ · ออกบิล · ดาวน์โหลด PDF/PNG · สรุปยอดรายเดือน</small></span>
+      </button>
+      <button class="home-card c-ac" onclick="showModule('ac')">
+        <span class="ic">❄️</span>
+        <span><b>ล้างแอร์</b>
+        <small>เช็กรอบล้างแอร์ · บันทึกประวัติ · แจ้งเตือนห้องที่ถึงรอบ</small></span>
+      </button>
+      <button class="home-card c-tenant" onclick="showModule('tenant')">
+        <span class="ic">👥</span>
+        <span><b>ข้อมูลผู้พัก</b>
+        <small>เพิ่ม/แก้ไข/ย้ายออก ผู้พัก · แนบรูปบัตร · เบอร์โทร</small></span>
+      </button>
+      <button class="home-card c-set" onclick="showModule('setting')">
+        <span class="ic">⚙️</span>
+        <span><b>ตั้งค่า</b>
+        <small>API URL · ค่าไฟ ค่าน้ำ ค่าเช่า · รอบล้างแอร์ · ข้อความท้ายบิล</small></span>
+      </button>
+    </div>
+    <div class="home-foot" id="homeConnHint">กำลังเชื่อมต่อ Firebase…</div>
+  </div>
+</section>
+
+<!-- ═══════════════ โมดูล: บิลค่าเช่า ═══════════════ -->
+<section class="module" id="module-bill">
+<nav class="tabs">
+  <button data-tab="dash" class="active">📊 ภาพรวม</button>
+  <button data-tab="meter">📟 บันทึกมิเตอร์</button>
+  <button data-tab="bill">🧾 ออกบิล</button>
+  <button data-tab="bills">📑 รายการบิล</button>
+</nav>
+<main>
+
+<!-- ===== แท็บ: ภาพรวม ===== -->
+<section class="tabpage active" id="page-dash">
+  <div class="card">
+    <h2>ภาพรวมเดือน <span id="dashMonthLabel"></span></h2>
+    <div class="stat-grid" id="statGrid"></div>
+  </div>
+  <div class="card">
+    <h2>⚠️ มิเตอร์ที่ควรตรวจสอบ</h2>
+    <div id="alertList"><p class="hint">ยังไม่มีข้อมูลมิเตอร์เดือนนี้</p></div>
+  </div>
+</section>
+
+<!-- ===== แท็บ: บันทึกมิเตอร์ ===== -->
+<section class="tabpage" id="page-meter">
+  <div class="card">
+    <h2>จดมิเตอร์ประจำเดือน <span id="meterMonthLabel"></span></h2>
+    <p class="hint">เลขมิเตอร์ "ครั้งก่อน" ดึงจากเดือนที่แล้วอัตโนมัติ กรอกเฉพาะเลข "ครั้งนี้" ระบบคำนวณหน่วยให้เอง (เครื่องหมาย * = คิดหน่วยขั้นต่ำ)</p>
+    <div class="btnrow" style="margin-top:10px">
+      <button class="btn btn-ghost" id="btnMeterPhoto">📷 อัปโหลดรูปใบจดมิเตอร์เดือนนี้</button>
+      <input type="file" id="meterPhotoFile" accept="image/*" style="display:none">
+    </div>
+    <div id="meterPhotoList" style="margin-top:6px"></div>
+  </div>
+  <div class="rooms-grid" id="roomsGrid"></div>
+  <div class="savebar">
+    <button class="btn btn-primary" id="btnSaveReadings" style="min-width:260px">💾 บันทึกมิเตอร์ทั้งหมด</button>
+  </div>
+</section>
+
+<!-- ===== แท็บ: ออกบิล ===== -->
+<section class="tabpage" id="page-bill">
+  <div class="bill-layout">
+    <div>
+      <div class="card">
+        <h2>ข้อมูลบิล</h2>
+        <div class="field">
+          <label>ห้อง</label>
+          <select id="billRoom"></select>
+        </div>
+        <div class="fields-2">
+          <div class="field"><label>ค่าเช่าห้อง (บาท)</label><input type="number" id="fRent"></div>
+          <div class="field"><label>ยอดค้างชำระเดิม (บาท)</label><input type="number" id="fArrears" value="0"></div>
+          <div class="field"><label>ค่าส่วนกลาง (บาท)</label><input type="number" id="fCommon"></div>
+          <div class="field"><label>ค่าปรับ (บาท)</label><input type="number" id="fFine" value="0"></div>
+          <div class="field"><label>ค่าโทรศัพท์ (บาท)</label><input type="number" id="fPhone" value="0"></div>
+          <div class="field"><label>ค่าที่จอดรถ (บาท)</label><input type="number" id="fParking" value="0"></div>
+        </div>
+        <div class="field"><label>กำหนดชำระ (อัตโนมัติ: วันที่ 5 ของเดือนถัดไป)</label><input type="date" id="fDue"></div>
+        <p class="hint">ค่าน้ำ–ค่าไฟคำนวณจากมิเตอร์ × อัตราในแท็บตั้งค่า (น้ำขั้นต่ำ <span id="hintWMin">2</span> หน่วย, ไฟขั้นต่ำ <span id="hintEMin">10</span> หน่วย)</p>
+      </div>
+      <div class="card">
+        <h2>ดาวน์โหลด / พิมพ์</h2>
+        <div class="btnrow">
+          <button class="btn btn-primary" id="btnPNG">🖼 PNG</button>
+          <button class="btn btn-primary" id="btnPDF">📄 PDF</button>
+          <button class="btn btn-ghost" id="btnPrint">🖨 พิมพ์</button>
+        </div>
+        <div class="btnrow">
+          <button class="btn btn-ghost" id="btnAllPNG">🖼 PNG ทุกห้อง (ZIP)</button>
+          <button class="btn btn-ghost" id="btnAllPDF">📚 PDF สรุป + บิลทุกห้อง</button>
+          <button class="btn btn-ghost" id="btnSaveBill">💾 บันทึกยอดบิล</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>ประวัติบิลห้องนี้</h2>
+        <div id="billHistory"><p class="hint">ยังไม่มีประวัติ</p></div>
+      </div>
+    </div>
+
+    <div class="bill-stage">
+<div id="billPaper">
+  <div class="bp-top">
+    <div class="bp-logo" aria-hidden="true">
+      <svg viewBox="0 0 48 40">
+        <path d="M14 36V10h20v26M9 36h30M20 16h2M26 16h2M20 22h2M26 22h2M20 28h2M26 28h2M32 18h6v18M10 20h4"/>
+      </svg>
+    </div>
+    <div class="bp-apt">กนกรัศม์<small>KANOKRAS APARTMENT</small></div>
+    <div class="bp-orn"><span></span></div>
+    <div class="bp-contact">
+      <span>📶 Wifi Password: <b id="bpWifi">8484848484</b></span>
+      <span>☎ โทร <span id="bpTel">061-145-6242</span></span>
+    </div>
+  </div>
+
+  <div class="bp-invoice-card">
+    <div class="bp-title-pill">ใบแจ้งยอด</div>
+    <div class="bp-docno" id="bpNo">เลขที่ —</div>
+    <div class="bp-meta-grid">
+      <div class="bp-left-info">
+        <div class="bp-icon">⌂</div>
+        <div>
+          <div class="bp-room-line">ห้อง <span id="bpRoom">—</span> <small id="bpRoomType"></small></div>
+        </div>
+        <div class="bp-icon">👤</div>
+        <div>
+          <div class="bp-label">ชื่อผู้เช่า</div>
+          <div class="bp-tenant-name" id="bpTenant">—</div><div class="bp-label" id="bpMoveIn" style="margin-top:4px">เข้าพักตั้งแต่ —</div>
+        </div>
+      </div>
+      <div class="bp-month-box">
+        <div class="bp-icon">📅</div>
+        <div class="bp-month-text">
+          <div class="bp-label">ประจำเดือน</div>
+          <b id="bpMonth">—</b>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>รายการ</th><th>ครั้งก่อน</th><th>ครั้งหลัง</th><th>หน่วย</th><th>จำนวนเงิน (บาท)</th>
+    </tr></thead>
+    <tbody id="bpRows"></tbody>
+  </table>
+  <div class="bp-total"><span>รวมทั้งสิ้น</span><b id="bpTotal">0.00</b></div>
+  <div class="bp-foot">กำหนดชำระ: <b id="bpDue">—</b></div>
+  <div class="bp-min" id="bpMinNote" style="display:none">* คิดตามหน่วยขั้นต่ำ</div>
+  <div class="bp-pay" id="bpPayNote"></div>
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== แท็บ: รายการบิล ===== -->
+<section class="tabpage" id="page-bills">
+<div class="card">
+  <h2>สรุปใบแจ้งยอดเดือน <span id="invoiceSummaryMonth"></span></h2>
+  <p class="hint">รวมเงินเฉพาะห้องที่มีผู้พัก และไม่รวมห้อง 101, 102 และห้องว่าง</p>
+  <div class="tbl-wrap" style="margin-top:12px">
+    <table class="tbl">
+      <thead><tr>
+        <th>ห้อง</th><th>ประเภท</th><th>สถานะ</th><th>ชื่อ</th><th>นามสกุล</th>
+        <th style="text-align:right">ยอดจ่าย</th>
+      </tr></thead>
+      <tbody id="invoiceSummaryRows"></tbody>
+      <tfoot><tr>
+        <td colspan="5" style="text-align:right;font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">รวมเงิน</td>
+        <td id="invoiceSummaryTotal" class="num" style="font-weight:700;padding:10px 8px;border-top:2px solid var(--line)">0.00 บาท</td>
+      </tr></tfoot>
+    </table>
+  </div>
+</div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0">รายการบิล</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btnSaveAllBills">💾 บันทึกบิลทุกห้องของเดือนนี้</button>
+        <select id="billsFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
+          <option value="month" selected>เฉพาะเดือนที่เลือก</option>
+          <option value="all">ทุกเดือน</option>
+          <option value="unpaid">ค้างชำระ/รอชำระทั้งหมด</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr>
+          <th>เดือน</th><th>ห้อง</th><th>ผู้พัก</th><th>ยอดบิล</th><th>กำหนดชำระ</th>
+          <th>สถานะ</th><th>วันที่ชำระ</th><th></th>
+        </tr></thead>
+        <tbody id="billsRows"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+</section>
+
+<!-- ═══════════════ โมดูล: ข้อมูลผู้พัก ═══════════════ -->
+<section class="module" id="module-tenant">
+<main>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0">👥 ทะเบียนผู้พัก</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="tenantFilter" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px">
+          <option value="all">ทั้งหมด</option>
+          <option value="active" selected>อยู่ปัจจุบัน</option>
+          <option value="moved_out">ย้ายออก</option>
+        </select>
+        <button class="btn btn-primary" id="btnAddTenant">＋ เพิ่มผู้พักใหม่</button>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr>
+          <th>ห้อง</th><th>ประเภทห้อง</th><th>ชื่อ</th><th>นามสกุล</th><th>เบอร์โทร</th>
+          <th>วันที่เข้า</th><th>วันที่ออก</th><th>สถานะ</th><th>รูปบัตร</th><th></th>
+        </tr></thead>
+        <tbody id="tenantRows"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="margin-top:8px">รูปบัตรจะเก็บใน Firebase Storage และ Firestore เก็บเฉพาะ path / URL ของไฟล์</p>
+  </div>
+</main>
+</section>
+
+<!-- ═══════════════ โมดูล: ล้างแอร์ ═══════════════ -->
+<section class="module" id="module-ac">
+<nav class="tabs">
+  <button data-tab="acdash" class="active">📊 ภาพรวม</button>
+  <button data-tab="acstatus">🌡 สถานะรายห้อง</button>
+  <button data-tab="acadd">➕ บันทึกงาน</button>
+  <button data-tab="achistory">🕓 ประวัติทั้งหมด</button>
+  <button data-tab="acrooms">🚪 ห้อง / แอร์</button>
+</nav>
+<main>
+
+<!-- ===== แอร์: ภาพรวม ===== -->
+<section class="tabpage active" id="page-acdash">
+  <div class="card">
+    <h2>❄️ ภาพรวมระบบล้างแอร์</h2>
+    <div class="stat-grid" id="acStatGrid"><p class="hint">กำลังโหลด…</p></div>
+  </div>
+  <div class="card">
+    <h2>🔴 ต้องล้างด่วน (เกินกำหนด / ใกล้ครบกำหนด)</h2>
+    <div id="acAlertList"><p class="hint">กำลังโหลด…</p></div>
+  </div>
+</section>
+
+<!-- ===== แอร์: สถานะรายห้อง ===== -->
+<section class="tabpage" id="page-acstatus">
+  <div class="card">
+    <div class="toolbar">
+      <select id="acFStatus">
+        <option value="">ทุกสถานะ</option>
+        <option value="เกินกำหนด">เกินกำหนด</option>
+        <option value="ใกล้ครบกำหนด">ใกล้ครบกำหนด</option>
+        <option value="ปกติ">ปกติ</option>
+      </select>
+      <select id="acFType"><option value="">ทุกประเภท</option></select>
+      <span class="hint" id="acStatusCount"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr>
+          <th>ห้อง</th><th>ประเภท</th><th>ติดตั้งเครื่อง</th><th>ล้างล่าสุด</th>
+          <th>ครบกำหนดถัดไป</th><th>เหลือ</th><th>สถานะ</th><th></th>
+        </tr></thead>
+        <tbody id="acStatusBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== แอร์: บันทึกงาน ===== -->
+<section class="tabpage" id="page-acadd">
+  <div class="card">
+    <h2>➕ บันทึกงานแอร์</h2>
+    <div class="fields-2">
+      <div class="field"><label>ห้อง</label><select id="acRoom"></select></div>
+      <div class="field"><label>วันที่</label><input type="date" id="acDate"></div>
+      <div class="field"><label>กิจกรรม</label>
+        <select id="acAct">
+          <option value="ล้างแอร์">ล้างแอร์</option>
+          <option value="ติดตั้งใหม่">ติดตั้งใหม่</option>
+          <option value="เปลี่ยนเครื่อง">เปลี่ยนเครื่อง</option>
+          <option value="ซ่อม">ซ่อม</option>
+        </select></div>
+      <div class="field"><label>ค่าใช้จ่าย (บาท)</label><input type="number" id="acCost" placeholder="ไม่บังคับ"></div>
+      <div class="field"><label>ช่าง / ร้าน</label><input id="acVendor" placeholder="ไม่บังคับ"></div>
+      <div class="field"><label>หมายเหตุ</label><input id="acNote" placeholder="ไม่บังคับ"></div>
+    </div>
+    <div class="field"><label>รูปภาพ (ก่อน/หลัง — ไม่บังคับ)</label>
+      <input type="file" id="acPhoto" accept="image/*"></div>
+    <div class="btnrow"><button class="btn btn-primary" id="acSave">💾 บันทึกงาน</button></div>
+  </div>
+  <div class="card">
+    <h2>🕓 บันทึกล่าสุด</h2>
+    <div id="acRecentLog"><p class="hint">—</p></div>
+  </div>
+</section>
+
+<!-- ===== แอร์: ประวัติทั้งหมด ===== -->
+<section class="tabpage" id="page-achistory">
+  <div class="card">
+    <div class="toolbar">
+      <select id="acHRoom"><option value="">ทุกห้อง</option></select>
+      <select id="acHAct">
+        <option value="">ทุกกิจกรรม</option>
+        <option>ล้างแอร์</option><option>ติดตั้งใหม่</option><option>เปลี่ยนเครื่อง</option><option>ซ่อม</option>
+      </select>
+      <span class="hint" id="acHistCount"></span>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr><th>วันที่</th><th>ห้อง</th><th>กิจกรรม</th><th>หมายเหตุ</th>
+          <th>ค่าใช้จ่าย</th><th>ช่าง/ร้าน</th><th>รูป</th><th></th></tr></thead>
+        <tbody id="acHistBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== แอร์: ห้อง / แอร์ ===== -->
+<section class="tabpage" id="page-acrooms">
+  <div class="card">
+    <div class="toolbar" style="justify-content:space-between">
+      <span class="hint" id="acRoomCount"></span>
+      <button class="btn btn-primary btn-sm" onclick="openACRoomModal()">＋ เพิ่มห้อง</button>
+    </div>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr><th>ห้อง</th><th>ประเภท</th><th>หมายเหตุ</th><th></th></tr></thead>
+        <tbody id="acRoomsBody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="margin-top:8px">ห้องประเภทตรงกับป้าย "ห้องไม่มีแอร์" (ตั้งค่าได้ที่โมดูลตั้งค่า เช่น พัดลม) จะไม่ถูกนับในภาพรวมและสถานะการล้าง</p>
+  </div>
+</section>
+
+</main>
+</section>
+
+<!-- ═══════════════ โมดูล: ตั้งค่า ═══════════════ -->
+<section class="module" id="module-setting">
+<main>
+  <div class="card">
+    <h2>🔐 Firebase / Google Login</h2>
+    <p class="hint">ระบบเชื่อมต่อ Firebase อัตโนมัติหลัง Google Login ไม่ต้องใส่ API URL อีกต่อไป</p>
+    <div style="display:none"><input type="url" id="setApiUrl"><button id="btnConnect"></button></div>
+    <p class="hint" style="margin-top:8px">การอ่าน/บันทึกข้อมูลใช้ Firestore โดยตรง และตรวจสิทธิ์จาก authorizedUsers</p>
+  </div>
+
+  <div class="card">
+    <h2>🧾 อัตราค่าบริการ (บิล)</h2>
+    <div class="rates-grid">
+      <div class="field"><label>ค่าน้ำ (บาท/หน่วย)</label><input type="number" id="setWaterRate" step="0.5"></div>
+      <div class="field"><label>ค่าไฟ (บาท/หน่วย)</label><input type="number" id="setElecRate" step="0.5"></div>
+      <div class="field"><label>น้ำขั้นต่ำ (หน่วย)</label><input type="number" id="setWaterMin"></div>
+      <div class="field"><label>ไฟขั้นต่ำ (หน่วย)</label><input type="number" id="setElecMin"></div>
+      <div class="field"><label>ค่าส่วนกลางเริ่มต้น</label><input type="number" id="setCommon"></div>
+      <div class="field"><label>ค่าปรับเริ่มต้น</label><input type="number" id="setFine"></div>
+    </div>
+    <div class="fields-2">
+      <div class="field"><label>Wifi Password (แสดงบนบิล)</label><input type="text" id="setWifi"></div>
+      <div class="field"><label>เบอร์โทรติดต่อ (แสดงบนบิล)</label><input type="text" id="setContactPhone"></div>
+    </div>
+    <div class="field"><label>ข้อความท้ายบิล (ช่องทางชำระเงิน)</label><input type="text" id="setPayNote"></div>
+  </div>
+
+  <div class="card">
+    <h2>❄️ ตั้งค่าระบบล้างแอร์</h2>
+    <div class="rates-grid">
+      <div class="field"><label>รอบล้างแอร์ (เดือน)</label><input type="number" id="setAcInterval"></div>
+      <div class="field"><label>แจ้งเตือนล่วงหน้า (วัน)</label><input type="number" id="setAcLead"></div>
+      <div class="field"><label>ป้าย "ห้องไม่มีแอร์"</label><input type="text" id="setAcFan"></div>
+    </div>
+    <p class="hint">ห้องในโมดูลล้างแอร์ที่ประเภทตรงกับป้ายนี้ (เช่น พัดลม) จะไม่นับในสรุปรอบล้าง</p>
+  </div>
+
+  <div class="btnrow" style="margin-bottom:20px">
+    <button class="btn btn-ghost" id="btnSaveLocal">บันทึกในเครื่องนี้</button>
+    <button class="btn btn-primary" id="btnSaveRemote">💾 บันทึกขึ้น Firebase</button>
+  </div>
+</main>
+</section>
+
+<!-- ===== Modal เพิ่ม/แก้ไขผู้พัก ===== -->
+<div class="modal-bg" id="tenantModalBg">
+  <div class="modal">
+    <h3 id="tmTitle">เพิ่มผู้พักใหม่</h3>
+    <div class="fields-2">
+      <div class="field"><label>ห้อง</label><select id="tmRoom"></select></div>
+      <div class="field"><label>ประเภทห้อง</label>
+        <select id="tmType">
+          <option>พัดลม</option><option>แอร์กลาง</option><option>แอร์ใหญ่</option>
+        </select></div>
+      <div class="field"><label>ชื่อ</label><input type="text" id="tmFirst"></div>
+      <div class="field"><label>นามสกุล</label><input type="text" id="tmLast"></div>
+      <div class="field"><label>เบอร์โทร</label><input type="tel" id="tmPhone"></div>
+      <div class="field"><label>วันที่เข้า</label><input type="date" id="tmMoveIn"></div>
+      <div class="field"><label>ประเภทบัตร</label>
+        <select id="tmIdType"><option value="idcard">บัตรประชาชน</option><option value="passport">พาสปอร์ต</option></select></div>
+      <div class="field"><label>เลขบัตร 4 ตัวท้าย</label><input type="text" id="tmIdLast4" maxlength="4" inputmode="numeric"></div>
+    </div>
+    <div class="field">
+      <label>รูปบัตรประชาชน / พาสปอร์ต</label>
+      <input type="file" id="tmIdFile" accept="image/*">
+      <p class="hint" id="tmIdHint"></p>
+    </div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13.5px;margin-bottom:12px">
+      <input type="checkbox" id="tmApplyRent" checked style="width:auto">
+      ตั้งค่าเช่าตามประเภทห้อง (พัดลม 2,400 / แอร์กลาง 2,600 / แอร์ใหญ่ 3,000)
+    </label>
+    <div class="btnrow" style="margin-top:4px">
+      <button class="btn btn-primary" id="tmSave">💾 บันทึก</button>
+      <button class="btn btn-ghost" id="tmCancel">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal ย้ายออก ===== -->
+<div class="modal-bg" id="moveoutModalBg">
+  <div class="modal">
+    <h3>บันทึกผู้พักย้ายออก</h3>
+    <p id="moName" style="margin-bottom:10px"></p>
+    <div class="field"><label>วันที่ออก</label><input type="date" id="moDate"></div>
+    <div class="btnrow">
+      <button class="btn btn-warn" id="moSave">ยืนยันย้ายออก</button>
+      <button class="btn btn-ghost" id="moCancel">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal เพิ่ม/แก้ไขห้องแอร์ ===== -->
+<div class="modal-bg" id="acRoomModalBg">
+  <div class="modal">
+    <h3 id="acRoomModalTitle">เพิ่มห้อง</h3>
+    <input type="hidden" id="acmEditRoom">
+    <div class="field"><label>หมายเลขห้อง</label><input id="acmRoom"></div>
+    <div class="field"><label>ประเภท</label>
+      <select id="acmType">
+        <option>พัดลม</option><option>แอร์ S</option><option>แอร์ M</option><option>แอร์ L</option>
+      </select></div>
+    <div class="field"><label>หมายเหตุ</label><input id="acmNote"></div>
+    <div class="btnrow">
+      <button class="btn btn-primary" id="acmSave">💾 บันทึก</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('acRoomModalBg').classList.remove('show')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== หน้าสรุปผู้บริหารสำหรับ PDF (ซ่อนไว้นอกจอ) ===== -->
+<div id="pdfSummaryHost" class="pdf-summary-host" aria-hidden="true">
+  <section id="summaryAmountPaper" class="summary-paper">
+    <div class="summary-head">
+      <div class="summary-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 40"><path d="M14 36V10h20v26M9 36h30M20 16h2M26 16h2M20 22h2M26 22h2M20 28h2M26 28h2M32 18h6v18M10 20h4"/></svg>
+      </div>
+      <div class="summary-brand">กนกรัศม์<small>KANOKRAS APARTMENT</small></div>
+      <div class="summary-title">สรุปยอดเรียกเก็บรายห้อง</div>
+      <div class="summary-month" id="sum1Month">—</div>
+    </div>
+    <div class="summary-note">หมายเหตุ: ห้อง 101–102 แสดงเป็นสำนักงานและไม่รวมในยอดเรียกเก็บรวม</div>
+    <table class="summary-table">
+      <colgroup>
+        <col style="width:10%"><col style="width:16%"><col style="width:19%"><col style="width:21%"><col style="width:19%"><col style="width:15%">
+      </colgroup>
+      <thead><tr>
+        <th class="center">ห้อง</th><th>ประเภท</th><th>ชื่อ</th><th>นามสกุล</th><th class="num">ยอดเรียกเก็บ</th><th class="center">หมายเหตุ</th>
+      </tr></thead>
+      <tbody id="sum1Rows"></tbody>
+      <tfoot><tr><td colspan="4" class="num">รวมยอดเรียกเก็บ</td><td class="num" id="sum1Total">0.00</td><td>บาท</td></tr></tfoot>
+    </table>
+    <div class="summary-bottom">
+      <div class="summary-total-card"><span>ยอดเรียกเก็บรวมประจำเดือน</span><b id="sum1Grand">0.00 บาท</b></div>
+      <div class="summary-footer" id="sum1Generated"></div>
+    </div>
+  </section>
+
+  <section id="summaryUtilityPaper" class="summary-paper">
+    <div class="summary-head">
+      <div class="summary-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 40"><path d="M14 36V10h20v26M9 36h30M20 16h2M26 16h2M20 22h2M26 22h2M20 28h2M26 28h2M32 18h6v18M10 20h4"/></svg>
+      </div>
+      <div class="summary-brand">กนกรัศม์<small>KANOKRAS APARTMENT</small></div>
+      <div class="summary-title">สรุปค่าน้ำและค่าไฟรายห้อง</div>
+      <div class="summary-month" id="sum2Month">—</div>
+    </div>
+    <div class="summary-note">ยอดค่าน้ำและค่าไฟคำนวณตามมิเตอร์ อัตราค่าบริการ และหน่วยขั้นต่ำของเดือนที่เลือก</div>
+    <table class="summary-table">
+      <colgroup>
+        <col style="width:10%"><col style="width:16%"><col style="width:20%"><col style="width:22%"><col style="width:16%"><col style="width:16%">
+      </colgroup>
+      <thead><tr>
+        <th class="center">ห้อง</th><th>ประเภท</th><th>ชื่อ</th><th>นามสกุล</th><th class="num">ค่าน้ำ</th><th class="num">ค่าไฟ</th>
+      </tr></thead>
+      <tbody id="sum2Rows"></tbody>
+      <tfoot><tr><td colspan="4" class="num">รวม</td><td class="num" id="sum2WaterTotal">0.00</td><td class="num" id="sum2ElecTotal">0.00</td></tr></tfoot>
+    </table>
+    <div class="summary-bottom">
+      <div class="summary-subtotals">
+        <div class="summary-subtotal"><span>รวมค่าน้ำ</span><b id="sum2WaterCard">0.00 บาท</b></div>
+        <div class="summary-subtotal"><span>รวมค่าไฟ</span><b id="sum2ElecCard">0.00 บาท</b></div>
+        <div class="summary-subtotal"><span>รวมค่าสาธารณูปโภค</span><b id="sum2Grand">0.00 บาท</b></div>
+      </div>
+      <div class="summary-footer" id="sum2Generated"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+<iframe name="upFrame" style="display:none"></iframe>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, getDoc, getDocs, query, where,
+  setDoc, updateDoc, deleteDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTuViKJdv0kF794q7URsXSMwV3TOYnruM",
+  authDomain: "knr-apartment.firebaseapp.com",
+  projectId: "knr-apartment",
+  storageBucket: "knr-apartment.firebasestorage.app",
+  messagingSenderId: "359932428062",
+  appId: "1:359932428062:web:2ea0ed0a5189a95ebed30f",
+  measurementId: "G-C582JF7GTL"
+};
+const fbApp = initializeApp(firebaseConfig);
+const fbAuth = getAuth(fbApp);
+const fbDb = getFirestore(fbApp);
+const fbProvider = new GoogleAuthProvider();
+let currentAuthUser = null;
+let currentAuthorizedUser = null;
+
+/* ================= ค่าคงที่ ================= */
+const ROOM_LIST = ['101','102','201','202','301','401','501','503'];
+const ROOM_TYPES = { 'พัดลม':2400, 'แอร์กลาง':2600, 'แอร์ใหญ่':3000 };
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                     'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('knw_'+k); return v===null? d : JSON.parse(v);}catch(e){ return (store._m||{})[k] ?? d; } },
+  set(k, v){ try{ localStorage.setItem('knw_'+k, JSON.stringify(v)); }catch(e){ (store._m = store._m||{})[k]=v; } }
+};
+
+const state = {
+  apiUrl: '',
+  connected: false,
+  month: new Date().toISOString().slice(0,7),
+  settings: Object.assign({waterRate:18, elecRate:8, waterMinUnits:2, elecMinUnits:10,
+    commonFee:100, fineFee:0, wifi:'8484848484', contactPhone:'061-145-6242',
+    payNote:'ชำระเงินสดที่สำนักงาน หรือโอนเข้าบัญชีตามที่แจ้งไว้\nกรุณาชำระภายในกำหนด',
+    intervalMonths:12, leadDays:30, fanLabel:'พัดลม'},
+    store.get('settings', {})),
+  rooms: [],
+  tenants: store.get('demo_tenants', []),
+  bills: store.get('demo_bills', []),
+  readings: {}, prevReadings: {}, prev2Readings: {},
+  meterPhotos: [],
+  // เก็บค่าที่ปรับในหน้าออกบิล แยกตามเดือนและห้อง
+  // เช่น 2026-07|201 เพื่อไม่ให้ค่าของแต่ละห้องทับกัน
+  billDrafts: store.get('billDrafts', {}),
+  ac: { rooms:[], log:[], summary:[], stats:{}, loaded:false },
+};
+
+const DEMO_PREV = {'101':{water:120,elec:4310},'102':{water:98,elec:3985},'201':{water:210,elec:5120},
+  '202':{water:187,elec:4770},'301':{water:64,elec:2890},'401':{water:143,elec:5602},
+  '501':{water:77,elec:3140},'503':{water:156,elec:4468}};
+
+/* ================= ยูทิลิตี ================= */
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function thaiMonth(ym){ const [y,m]=ym.split('-'); return THAI_MONTHS[+m-1]+' '+(+y+543); }
+function thaiMonthShort(ym){ const S=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const [y,m]=ym.split('-'); return S[+m-1]+' '+(+y+543); }
+function thaiDate(iso){ if(!iso) return '—'; const d=new Date(iso+'T00:00:00');
+  return d.getDate()+' '+THAI_MONTHS[d.getMonth()]+' '+(d.getFullYear()+543); }
+function thaiDateShort(iso){ if(!iso) return '-'; const d=new Date(iso+'T00:00:00');
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+(d.getFullYear()+543); }
+function prevMonthOf(ym){ const [y,m]=ym.split('-').map(Number);
+  const d=new Date(y, m-2, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function dueOf(ym){ // วันที่ 5 ของเดือนถัดไป
+  const [y,m]=ym.split('-').map(Number);
+  const d=new Date(y, m, 5);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-05';
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2800); }
+function typeOf(room){ const r=state.rooms.find(x=>x.room===room); return r? (r.type||'พัดลม') : ''; }
+function activeTenantOf(room){ return state.tenants.find(t=>t.room===room && t.status==='active'); }
+function tenantName(t){ return t? [t.firstName,t.lastName].filter(Boolean).join(' ') : ''; }
+
+/* ================= สลับโมดูล / แท็บ ================= */
+function showModule(name){
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  $('module-'+name).classList.add('active');
+  $('monthPickWrap').style.display = name==='bill' ? 'flex' : 'none';
+  $('btnHome').style.display = name==='home' ? 'none' : 'inline-flex';
+  window.scrollTo(0,0);
+  if(name==='bill'){ renderDashboard(); }
+  if(name==='tenant') renderTenants();
+  if(name==='setting') fillSettingsForm();
+  if(name==='ac') loadAC();
+}
+document.querySelectorAll('nav.tabs').forEach(nav=>{
+  nav.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      nav.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+      const mod = nav.closest('.module');
+      mod.querySelectorAll('.tabpage').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      $('page-'+b.dataset.tab).classList.add('active');
+      const t = b.dataset.tab;
+      if(t==='bill'){ renderBill(); renderBillHistory(); }
+      if(t==='dash') renderDashboard();
+      if(t==='bills') renderBillsTable();
+      if(t==='acdash') renderACDash();
+      if(t==='acstatus') renderACStatus();
+      if(t==='achistory') renderACHistory();
+      if(t==='acrooms') renderACRooms();
+      if(t==='acadd' && !$('acDate').value) $('acDate').value = todayISO();
+    });
+  });
+});
+
+/* ================= Firebase data access ================= */
+function fsDate(v){
+  if(!v) return '';
+  if(typeof v === 'string') return v.slice(0,10);
+  if(v && typeof v.toDate === 'function') return v.toDate().toISOString().slice(0,10);
+  return String(v).slice(0,10);
+}
+async function fsAll(colName){
+  const s = await getDocs(collection(fbDb, colName));
+  return s.docs.map(d=>Object.assign({__id:d.id}, d.data()));
+}
+async function api(action, params={}, data){
+  if(!currentAuthorizedUser) throw new Error('ยังไม่ได้รับอนุญาตให้ใช้ระบบ');
+  const a = String(action||'').toLowerCase();
+
+  if(a==='bootstrap'){
+    const [roomDocs, tenantDocs, cfg] = await Promise.all([
+      fsAll('rooms'), fsAll('tenants'), getDoc(doc(fbDb,'config','apartment'))
+    ]);
+    return {
+      ok:true,
+      settings: cfg.exists()? cfg.data() : {},
+      rooms: roomDocs.sort((x,y)=>String(x.room).localeCompare(String(y.room),'th',{numeric:true})),
+      tenants: tenantDocs
+    };
+  }
+
+  if(a==='readings'){
+    const readM = async m=>{
+      if(!m) return {};
+      const s = await getDocs(query(collection(fbDb,'meterReadings'), where('month','==',m)));
+      const out={}; s.forEach(d=>{ const x=d.data(); out[String(x.room)]={water:x.water??null, elec:x.elec??null}; });
+      return out;
+    };
+    const [cur,prev,prev2] = await Promise.all([readM(params.month),readM(params.prev),readM(params.prev2)]);
+    return {ok:true,readings:cur,prevReadings:prev,prev2Readings:prev2,photos:[]};
+  }
+
+  if(a==='savereadings'){
+    for(const r of data.readings||[]){
+      if(r.water==null && r.elec==null) continue;
+      const id = `${data.month}_${r.room}`;
+      await setDoc(doc(fbDb,'meterReadings',id),{
+        month:data.month,room:String(r.room),
+        water:r.water??null,elec:r.elec??null,
+        recordedAt:new Date().toISOString(), recordedBy: currentAuthUser?.email||''
+      },{merge:true});
+    }
+    return {ok:true};
+  }
+
+  if(a==='bills'){
+    const arr = await fsAll('bills');
+    return {ok:true,bills:arr.map(x=>({
+      month:x.month,room:String(x.room),billNo:x.billNo||'',
+      total:Number(x.total)||0,due:fsDate(x.due),status:x.status||'รอชำระ',
+      paidDate:fsDate(x.paidDate)
+    }))};
+  }
+
+  if(a==='savebill'){
+    const b=data.bill, id=`${data.month}_${b.room}`, t=activeTenantOf(String(b.room));
+    const existing = await getDoc(doc(fbDb,'bills',id));
+    const ex = existing.exists()? existing.data() : {};
+    await setDoc(doc(fbDb,'bills',id),{
+      month:data.month, room:String(b.room), billNo:b.no||'',
+      items:b.items||{}, total:Number(b.total)||0, due:b.due||'',
+      status:ex.status||'รอชำระ', paidDate:ex.paidDate||'',
+      tenantId:t?.tenantId||'', tenantName:t?tenantName(t):'',
+      moveInDate:t?.moveInDate||'',
+      savedAt:new Date().toISOString(), updatedBy:currentAuthUser?.email||''
+    },{merge:true});
+    return {ok:true};
+  }
+
+  if(a==='setbillstatus' || a==='markpaid'){
+    const id=`${data.month}_${data.room}`;
+    await setDoc(doc(fbDb,'bills',id),{
+      status:a==='markpaid'?'ชำระแล้ว':data.status,
+      paidDate:(a==='markpaid'||data.status==='ชำระแล้ว') ? (data.paidDate||todayISO()) : '',
+      updatedAt:new Date().toISOString(), updatedBy:currentAuthUser?.email||''
+    },{merge:true});
+    return {ok:true};
+  }
+
+  if(a==='savesettings'){
+    const s=data.settings||data||{};
+    await setDoc(doc(fbDb,'config','apartment'),s,{merge:true});
+    return {ok:true};
+  }
+
+  if(a==='savetenant'){
+    let tenantId=data.tenantId;
+    if(!tenantId){
+      const all=await fsAll('tenants');
+      let max=0; all.forEach(x=>{const m=String(x.tenantId||x.__id).match(/^T-(\d+)$/); if(m)max=Math.max(max,+m[1]);});
+      tenantId='T-'+String(max+1).padStart(4,'0');
+    }
+    const old=await getDoc(doc(fbDb,'tenants',tenantId));
+    const ex=old.exists()?old.data():{};
+    await setDoc(doc(fbDb,'tenants',tenantId),{
+      tenantId, room:String(data.room), firstName:data.firstName||'', lastName:data.lastName||'',
+      phone:data.phone||'', idType:data.idType||'', idNumberLast4:data.idNumberLast4||'',
+      moveInDate:data.moveInDate||'', moveOutDate:ex.moveOutDate||'',
+      status:ex.status||'active', idImageFileId:ex.idImageFileId||'', idImageUrl:ex.idImageUrl||'',
+      createdAt:ex.createdAt||new Date().toISOString(), updatedAt:new Date().toISOString()
+    },{merge:true});
+    if(data.roomType){
+      const patch={type:data.roomType};
+      if(data.applyDefaultRent) patch.rent=ROOM_TYPES[data.roomType]||0;
+      await setDoc(doc(fbDb,'rooms',String(data.room)),patch,{merge:true});
+    }
+    return {ok:true,tenantId};
+  }
+
+  if(a==='moveout'){
+    await setDoc(doc(fbDb,'tenants',String(data.tenantId)),{
+      moveOutDate:data.moveOutDate||todayISO(), status:'moved_out', updatedAt:new Date().toISOString()
+    },{merge:true});
+    return {ok:true};
+  }
+
+  if(a==='acdata'){
+    const [rooms,log,settingsDoc] = await Promise.all([fsAll('rooms'),fsAll('acLogs'),getDoc(doc(fbDb,'config','apartment'))]);
+    const acRooms=rooms.filter(r=>r.hasAircon).map(r=>({roomNo:String(r.room),type:r.acType||'',note:r.acNote||''}));
+    const acLog=log.map(x=>({id:x.id||x.__id,date:fsDate(x.date),roomNo:String(x.roomNo),activity:x.activity||'',note:x.note||'',cost:x.cost??'',vendor:x.vendor||'',photoURL:x.photoURL||''}))
+                   .sort((a,b)=>a.date<b.date?1:-1);
+    const settings=settingsDoc.exists()?settingsDoc.data():{};
+    const summary = acSummary(acLog,settings,acRooms);
+    return {ok:true,rooms:acRooms,log:acLog,summary,stats:acStats(summary,acLog)};
+  }
+
+  if(a==='acaddlog'){
+    const id='L'+Date.now();
+    await setDoc(doc(fbDb,'acLogs',id),{
+      id,date:data.date,roomNo:String(data.room),activity:data.activity||'',note:data.note||'',
+      cost:data.cost===''?null:Number(data.cost),vendor:data.vendor||'',photoURL:data.photoURL||'',
+      createdAt:new Date().toISOString(),createdBy:currentAuthUser?.email||''
+    });
+    return {ok:true,id};
+  }
+
+  if(a==='acdeletelog'){ await deleteDoc(doc(fbDb,'acLogs',String(data.id))); return {ok:true}; }
+
+  if(a==='acaddroom' || a==='acupdateroom'){
+    const room=String(data.room);
+    await setDoc(doc(fbDb,'rooms',room),{
+      room,hasAircon:true,acType:data.type||'',acNote:data.note||''
+    },{merge:true});
+    return {ok:true};
+  }
+
+  if(a==='acdeleteroom'){
+    await setDoc(doc(fbDb,'rooms',String(data.room)),{hasAircon:false,acType:'',acNote:''},{merge:true});
+    return {ok:true};
+  }
+
+  throw new Error('unknown action: '+action);
+}
+
+/* ================= Offline demo disabled in Firebase version ================= */
+/* ================= เชื่อมต่อ / โหลดข้อมูล ================= */
+async function connect(){
+  if(!currentAuthorizedUser) return;
+  toast('กำลังโหลดข้อมูลจาก Firebase…');
+  try{
+    const boot = await api('bootstrap');
+    state.connected = true;
+    state.ac.loaded = false;
+    if(boot.settings) Object.assign(state.settings, boot.settings);
+    if(boot.rooms && boot.rooms.length) state.rooms = boot.rooms;
+    state.tenants = boot.tenants || [];
+    $('connDot').classList.add('on');
+    $('homeConnHint').textContent = 'เชื่อมต่อ Firebase แล้ว ✓';
+    await Promise.all([loadMonth(), loadBills()]);
+    renderAll();
+    if($('module-ac').classList.contains('active')) loadAC(true);
+  }catch(e){
+    state.connected = false; $('connDot').classList.remove('on');
+    toast('โหลด Firebase ไม่สำเร็จ: '+e.message);
+  }
+}
+
+async function loadMonth(){
+  try{
+    const prev = prevMonthOf(state.month);
+    const r = await api('readings', {month:state.month, prev, prev2:prevMonthOf(prev)});
+    state.readings = r.readings||{};
+    state.prevReadings = r.prevReadings||{};
+    state.prev2Readings = r.prev2Readings||{};
+    state.meterPhotos = r.photos||[];
+  }catch(e){ toast('โหลดมิเตอร์ไม่สำเร็จ: '+e.message); }
+}
+async function loadBills(){
+  try{ const r = await api('bills'); state.bills = r.bills||[]; }
+  catch(e){ toast('โหลดรายการบิลไม่สำเร็จ'); }
+}
+function renderAll(){
+  fillSettingsForm(); renderMeterGrid(); refreshBillForm();
+  renderTenants(); renderBillsTable(); renderInvoiceSummary(); renderDashboard(); renderMeterPhotos();
+}
+
+/* ================= การคำนวณหน่วย (ขั้นต่ำ น้ำ/ไฟ) ================= */
+function unitsRaw(room, kind){
+  const p = (state.prevReadings[room]||{})[kind];
+  const c = (state.readings[room]||{})[kind];
+  if(p==null || c==null || c==='') return null;
+  return Math.max(0, c - p);
+}
+function unitsBilled(room, kind){
+  const raw = unitsRaw(room, kind);
+  if(raw==null) return {billed:null, raw:null, minApplied:false};
+  const min = kind==='water' ? (Number(state.settings.waterMinUnits)||0)
+                             : (Number(state.settings.elecMinUnits)||0);
+  return raw < min ? {billed:min, raw, minApplied:true} : {billed:raw, raw, minApplied:false};
+}
+
+/* ================= Dashboard บิล ================= */
+function renderDashboard(){
+  $('dashMonthLabel').textContent = thaiMonth(state.month);
+  const monthBills = state.bills.filter(b=>b.month===state.month && b.status!=='ยกเลิก');
+  const total = monthBills.reduce((s,b)=>s+b.total,0);
+  const paid = monthBills.filter(b=>b.status==='ชำระแล้ว').reduce((s,b)=>s+b.total,0);
+  const unpaid = total - paid;
+  const vacant = state.rooms.filter(r=>!activeTenantOf(r.room));
+  const noMeter = state.rooms.filter(r=>{const c=state.readings[r.room]||{};
+    return c.water==null && c.elec==null;});
+  const stats = [
+    {v:monthBills.length+' / '+state.rooms.length, l:'ออกบิลแล้ว (ห้อง)'},
+    {v:fmt(total)+' ฿', l:'ยอดบิลรวมเดือนนี้'},
+    {v:fmt(paid)+' ฿', l:'ชำระแล้ว'},
+    {v:fmt(unpaid)+' ฿', l:'ค้างชำระ/รอชำระ', cls: unpaid>0?'bad':''},
+    {v:vacant.length+' ห้อง', l:'ห้องว่าง'+(vacant.length? ' ('+vacant.map(r=>r.room).join(', ')+')':''), cls: vacant.length?'warn':''},
+    {v:noMeter.length+' ห้อง', l:'ยังไม่กรอกมิเตอร์'+(noMeter.length? ' ('+noMeter.map(r=>r.room).join(', ')+')':''), cls: noMeter.length?'warn':''},
+  ];
+  $('statGrid').innerHTML = stats.map(s=>
+    `<div class="stat ${s.cls||''}"><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`).join('');
+  renderAlerts();
+}
+
+/* ================= เตือนมิเตอร์ผิดปกติ ================= */
+function meterAlerts(room){
+  const out = [];
+  const prev = state.prevReadings[room]||{}, cur = state.readings[room]||{};
+  ['water','elec'].forEach(kind=>{
+    const name = kind==='water'?'น้ำ':'ไฟ';
+    if(prev[kind]!=null && cur[kind]!=null && cur[kind]!=='' && cur[kind] < prev[kind])
+      out.push({level:'red', msg:`เลขมิเตอร์${name}ครั้งนี้ (${cur[kind]}) น้อยกว่าครั้งก่อน (${prev[kind]})`});
+  });
+  const eu = unitsRaw(room,'elec');
+  if(eu === 0) out.push({level:'amber', msg:'ไฟเดือนนี้ = 0 หน่วย'});
+  const wu = unitsRaw(room,'water');
+  const p2 = state.prev2Readings[room]||{};
+  if(wu!=null && wu>0 && prev.water!=null && p2.water!=null){
+    const prevUse = prev.water - p2.water;
+    if(prevUse > 0 && wu >= prevUse*2)
+      out.push({level:'amber', msg:`น้ำเดือนนี้ ${wu} หน่วย สูงกว่าเดือนก่อน (${prevUse} หน่วย) ตั้งแต่ 2 เท่าขึ้นไป`});
+  }
+  return out;
+}
+function renderAlerts(){
+  const items = [];
+  state.rooms.forEach(r=>{
+    meterAlerts(r.room).forEach(a=>items.push(
+      `<div class="alert-item"><b>ห้อง ${r.room}</b>
+        <span class="badge ${a.level==='red'?'red':'amber'}">${a.level==='red'?'ผิดพลาด':'ตรวจสอบ'}</span>
+        <span>${a.msg}</span></div>`));
+  });
+  $('alertList').innerHTML = items.length? items.join('') :
+    '<p class="hint">✓ ไม่พบความผิดปกติของมิเตอร์เดือนนี้</p>';
+}
+
+/* ================= โมดูลผู้พัก ================= */
+function renderTenants(){
+  const f = $('tenantFilter').value;
+  const list = state.tenants.filter(t=> f==='all' ? true : t.status===f)
+    .sort((a,b)=> String(a.room).localeCompare(String(b.room)));
+  $('tenantRows').innerHTML = list.length? list.map(t=>{
+    const active = t.status==='active';
+    return `<tr>
+      <td><b>${t.room}</b></td>
+      <td>${typeOf(t.room)}</td>
+      <td>${esc(t.firstName)||''}</td><td>${esc(t.lastName)||''}</td>
+      <td>${esc(t.phone)||'-'}</td>
+      <td>${thaiDateShort(t.moveInDate)}</td>
+      <td>${thaiDateShort(t.moveOutDate)}</td>
+      <td><span class="badge ${active?'green':'gray'}">${active?'อยู่ปัจจุบัน':'ย้ายออก'}</span></td>
+      <td>${t.idImageUrl? `<a href="${t.idImageUrl}" target="_blank">🪪 ดูรูป</a>`
+            : `<button class="btn btn-ghost btn-sm" onclick="uploadIdFor('${t.tenantId}')">📷 อัปโหลด</button>`}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editTenant('${t.tenantId}')">แก้ไข</button>
+        ${active? `<button class="btn btn-warn btn-sm" onclick="openMoveOut('${t.tenantId}')">ย้ายออก</button>`:''}
+      </td></tr>`;
+  }).join('') : '<tr><td colspan="10" class="hint" style="padding:18px">ยังไม่มีข้อมูลผู้พัก — กด "＋ เพิ่มผู้พักใหม่"</td></tr>';
+}
+
+let editingTenantId = null;
+function openTenantModal(t){
+  editingTenantId = t? t.tenantId : null;
+  $('tmTitle').textContent = t? 'แก้ไขข้อมูลผู้พัก '+t.tenantId : 'เพิ่มผู้พักใหม่';
+  $('tmRoom').innerHTML = state.rooms.map(r=>{
+    const occ = activeTenantOf(r.room);
+    const label = `ห้อง ${r.room} (${r.type||'พัดลม'})` + (occ && (!t||occ.tenantId!==t.tenantId)? ' — มีผู้พักแล้ว':'');
+    return `<option value="${r.room}">${label}</option>`;
+  }).join('');
+  const freeRoom = state.rooms.find(r=>!activeTenantOf(r.room));
+  $('tmRoom').value = t? t.room : (freeRoom||state.rooms[0]).room;
+  $('tmType').value = typeOf($('tmRoom').value)||'พัดลม';
+  $('tmFirst').value = t? t.firstName||'' : '';
+  $('tmLast').value  = t? t.lastName||''  : '';
+  $('tmPhone').value = t? t.phone||''     : '';
+  $('tmMoveIn').value= t? (t.moveInDate||'') : todayISO();
+  $('tmIdType').value= t && t.idType==='passport' ? 'passport' : 'idcard';
+  $('tmIdLast4').value = t? t.idNumberLast4||'' : '';
+  $('tmIdFile').value = '';
+  $('tmIdHint').textContent = t && t.idImageUrl ? 'มีรูปบัตรแล้ว — เลือกไฟล์ใหม่หากต้องการอัปโหลดทับ' :
+    (state.connected? '' : 'ต้องเชื่อมต่อ Firebase ก่อนจึงอัปโหลดรูปได้');
+  $('tenantModalBg').classList.add('show');
+}
+function editTenant(id){ const t = state.tenants.find(x=>x.tenantId===id); if(t) openTenantModal(t); }
+
+$('tmRoom').addEventListener('change', ()=>{ $('tmType').value = typeOf($('tmRoom').value)||'พัดลม'; });
+$('btnAddTenant').addEventListener('click', ()=>openTenantModal(null));
+$('tmCancel').addEventListener('click', ()=>$('tenantModalBg').classList.remove('show'));
+
+$('tmSave').addEventListener('click', async ()=>{
+  if(!$('tmFirst').value.trim()){ toast('กรุณากรอกชื่อ'); return; }
+  $('tmSave').disabled = true;
+  try{
+    const r = await api('savetenant', {}, {
+      tenantId: editingTenantId,
+      room: $('tmRoom').value, roomType: $('tmType').value,
+      applyDefaultRent: $('tmApplyRent').checked,
+      firstName: $('tmFirst').value.trim(), lastName: $('tmLast').value.trim(),
+      phone: $('tmPhone').value.trim(),
+      idType: $('tmIdType').value, idNumberLast4: $('tmIdLast4').value.trim(),
+      moveInDate: $('tmMoveIn').value,
+    });
+    const file = $('tmIdFile').files[0];
+    if(file && state.connected){
+      toast('บันทึกแล้ว กำลังอัปโหลดรูปบัตร…');
+      await uploadFile('idcard', {room:$('tmRoom').value, tenantId:r.tenantId,
+        idType:$('tmIdType').value}, file);
+      toast('บันทึกผู้พัก + รูปบัตรแล้ว ✓');
+    } else if(file && !state.connected){
+      toast('บันทึกข้อมูลแล้ว (รูปบัตรอัปโหลดได้เมื่อเชื่อมต่อ Google)');
+    } else toast('บันทึกข้อมูลผู้พักแล้ว ✓');
+    if(state.connected){
+      const boot = await jsonp({action:'bootstrap'});
+      if(boot.ok){ state.rooms=boot.rooms; state.tenants=boot.tenants||[]; }
+    }
+    $('tenantModalBg').classList.remove('show');
+    renderAll();
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  $('tmSave').disabled = false;
+});
+
+function uploadIdFor(tenantId){
+  const t = state.tenants.find(x=>x.tenantId===tenantId); if(!t) return;
+  if(!state.connected){ toast('ต้องเชื่อมต่อ Firebase ก่อนจึงอัปโหลดรูปได้'); return; }
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange = async ()=>{
+    if(!inp.files[0]) return;
+    toast('กำลังอัปโหลดรูปบัตร…');
+    try{
+      await uploadFile('idcard', {room:t.room, tenantId:t.tenantId, idType:t.idType||'idcard'}, inp.files[0]);
+      const boot = await jsonp({action:'bootstrap'});
+      if(boot.ok) state.tenants = boot.tenants||[];
+      renderTenants(); toast('อัปโหลดรูปบัตรแล้ว ✓');
+    }catch(e){ toast('อัปโหลดไม่สำเร็จ: '+e.message); }
+  };
+  inp.click();
+}
+
+let moveOutId = null;
+function openMoveOut(id){
+  const t = state.tenants.find(x=>x.tenantId===id); if(!t) return;
+  moveOutId = id;
+  $('moName').innerHTML = `ห้อง <b>${t.room}</b> — ${esc(tenantName(t))}`;
+  $('moDate').value = todayISO();
+  $('moveoutModalBg').classList.add('show');
+}
+$('moCancel').addEventListener('click', ()=>$('moveoutModalBg').classList.remove('show'));
+$('moSave').addEventListener('click', async ()=>{
+  try{
+    await api('moveout', {}, {tenantId:moveOutId, moveOutDate:$('moDate').value});
+    const t = state.tenants.find(x=>x.tenantId===moveOutId);
+    if(t){ t.status='moved_out'; t.moveOutDate=$('moDate').value; }
+    $('moveoutModalBg').classList.remove('show');
+    toast('บันทึกย้ายออกแล้ว — ห้องกลับเป็นว่าง ✓');
+    renderAll();
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+});
+$('tenantFilter').addEventListener('change', renderTenants);
+
+/* ================= อัปโหลดไฟล์ (form-POST + รอผลผ่าน JSONP) ================= */
+function resizeImage(file, maxW=1400, q=.85){
+  return Promise.reject(new Error('Firebase Storage ยังไม่ได้เปิดในเวอร์ชันทดสอบนี้'));
+}
+async function uploadFile(kind, meta, file){
+  throw new Error('Firebase Storage ยังไม่ได้เปิดในเวอร์ชันทดสอบนี้');
+}
+
+/* รูปใบจดมิเตอร์ */
+$('btnMeterPhoto').addEventListener('click', ()=>{
+  if(!state.connected){ toast('ต้องเชื่อมต่อ Firebase ก่อนจึงอัปโหลดรูปได้'); return; }
+  $('meterPhotoFile').click();
+});
+$('meterPhotoFile').addEventListener('change', async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  toast('กำลังอัปโหลดรูปใบจดมิเตอร์…'); $('btnMeterPhoto').disabled=true;
+  try{
+    const r = await uploadFile('meterphoto', {month:state.month}, file);
+    state.meterPhotos.push({fileId:r.fileId, url:r.url, filename:file.name});
+    renderMeterPhotos();
+    toast('อัปโหลดแล้ว ✓ เก็บใน Drive › Meter Photos › '+state.month);
+  }catch(err){ toast('อัปโหลดไม่สำเร็จ: '+err.message); }
+  $('btnMeterPhoto').disabled=false; e.target.value='';
+});
+function renderMeterPhotos(){
+  $('meterPhotoList').innerHTML = state.meterPhotos.map(p=>
+    `<a class="photo-chip" href="${p.url}" target="_blank">🖼 ${esc(p.filename)||'รูปมิเตอร์'}</a>`).join('');
+}
+
+/* ================= แท็บมิเตอร์ ================= */
+function renderMeterGrid(){
+  $('meterMonthLabel').textContent = thaiMonth(state.month);
+  const g = $('roomsGrid'); g.innerHTML='';
+  state.rooms.forEach(rm=>{
+    const prev = state.prevReadings[rm.room]||{};
+    const cur  = state.readings[rm.room]||{};
+    const t = activeTenantOf(rm.room);
+    const el = document.createElement('div');
+    el.className='room-card';
+    el.innerHTML = `
+      <div class="rc-head"><b>ห้อง ${rm.room} <span style="font-size:12px;font-weight:400;color:var(--muted)">(${rm.type||'พัดลม'})</span></b>
+        <span>${t? esc(tenantName(t)) : 'ว่าง'}</span></div>
+      <div class="meter-labels"><div></div><div>ครั้งก่อน</div><div>ครั้งนี้</div><div>หน่วย</div></div>
+      <div class="meter-row"><span class="ico">💧</span>
+        <span class="prev">${prev.water ?? '—'}</span>
+        <input type="number" inputmode="numeric" data-room="${rm.room}" data-kind="water" value="${cur.water ?? ''}">
+        <span class="units" id="uW${rm.room}">–</span></div>
+      <div class="meter-row"><span class="ico">⚡</span>
+        <span class="prev">${prev.elec ?? '—'}</span>
+        <input type="number" inputmode="numeric" data-room="${rm.room}" data-kind="elec" value="${cur.elec ?? ''}">
+        <span class="units" id="uE${rm.room}">–</span></div>
+      <div class="rc-warn" id="warn${rm.room}"></div>`;
+    g.appendChild(el);
+    updateUnits(rm.room);
+  });
+  g.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const {room, kind} = e.target.dataset;
+      state.readings[room] = state.readings[room]||{};
+      state.readings[room][kind] = e.target.value===''? null : Number(e.target.value);
+      updateUnits(room);
+      if($('billRoom').value===room) renderBill();
+    });
+  });
+}
+function updateUnits(room){
+  const w = unitsBilled(room,'water'), e = unitsBilled(room,'elec');
+  $('uW'+room).textContent = w.billed==null? '–' : (w.minApplied? w.billed+'*' : w.billed);
+  $('uE'+room).textContent = e.billed==null? '–' : (e.minApplied? e.billed+'*' : e.billed);
+  const alerts = meterAlerts(room);
+  const notes = [];
+  if(w.minApplied) notes.push('น้ำใช้จริง '+w.raw+' → คิดขั้นต่ำ '+w.billed+' หน่วย');
+  if(e.minApplied) notes.push('ไฟใช้จริง '+e.raw+' → คิดขั้นต่ำ '+e.billed+' หน่วย');
+  $('warn'+room).innerHTML =
+    alerts.map(a=>`<div class="${a.level==='red'?'red':''}">⚠️ ${a.msg}</div>`).join('') +
+    notes.map(n=>`<div style="color:var(--muted)">* ${n}</div>`).join('');
+}
+
+async function saveReadings(){
+  const rows = state.rooms.map(rm=>({room:rm.room,
+    water:(state.readings[rm.room]||{}).water ?? null,
+    elec:(state.readings[rm.room]||{}).elec ?? null}));
+  $('btnSaveReadings').disabled=true; toast('กำลังบันทึก…');
+  try{
+    await api('savereadings', {}, {month:state.month, readings:rows});
+    toast('บันทึกมิเตอร์ลง Firebase แล้ว ✓');
+    renderDashboard();
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  $('btnSaveReadings').disabled=false;
+}
+
+/* ================= แท็บออกบิล ================= */
+function refreshBillForm(){
+  const sel = $('billRoom'); const keep = sel.value;
+  sel.innerHTML = state.rooms.map(r=>{
+    const t = activeTenantOf(r.room);
+    return `<option value="${r.room}">ห้อง ${r.room} (${r.type||'พัดลม'})${t? ' — '+esc(tenantName(t)):''}</option>`;
+  }).join('');
+  if(keep && [...sel.options].some(o=>o.value===keep)) sel.value = keep;
+  loadRoomIntoForm();
+}
+function billDraftKey(room){
+  return state.month + '|' + String(room);
+}
+
+function defaultBillDraft(room){
+  const rm = state.rooms.find(r=>String(r.room)===String(room)) || {};
+  return {
+    rent: Number(rm.rent ?? 0),
+    arrears: 0,
+    common: Number(rm.common ?? state.settings.commonFee ?? 0),
+    fine: Number(rm.fine ?? state.settings.fineFee ?? 0),
+    phone: Number(rm.phone ?? 0),
+    parking: Number(rm.parking ?? 0),
+    due: dueOf(state.month),
+  };
+}
+
+function getBillDraft(room){
+  const saved = state.billDrafts[billDraftKey(room)] || {};
+  return Object.assign(defaultBillDraft(room), saved);
+}
+
+function saveCurrentBillDraft(){
+  const room = $('billRoom').value;
+  if(!room) return;
+  state.billDrafts[billDraftKey(room)] = {
+    rent: Number($('fRent').value) || 0,
+    arrears: Number($('fArrears').value) || 0,
+    common: Number($('fCommon').value) || 0,
+    fine: Number($('fFine').value) || 0,
+    phone: Number($('fPhone').value) || 0,
+    parking: Number($('fParking').value) || 0,
+    due: $('fDue').value || dueOf(state.month),
+  };
+  store.set('billDrafts', state.billDrafts);
+}
+
+function loadRoomIntoForm(){
+  const room = $('billRoom').value;
+  if(!room) return;
+  const d = getBillDraft(room);
+  $('fRent').value    = d.rent;
+  $('fCommon').value  = d.common;
+  $('fFine').value    = d.fine;
+  $('fPhone').value   = d.phone;
+  $('fParking').value = d.parking;
+  $('fArrears').value = d.arrears;
+  $('fDue').value     = d.due;
+  renderBill();
+  renderBillHistory();
+}
+
+function billData(room){
+  room = String(room);
+  const rm = state.rooms.find(r=>String(r.room)===room)||{};
+  const draft = getBillDraft(room);
+  const w = unitsBilled(room,'water'), e = unitsBilled(room,'elec');
+  const prev = state.prevReadings[room]||{}, cur = state.readings[room]||{};
+  const t = activeTenantOf(room);
+  const items = [
+    {name:'ค่าเช่าห้อง', key:'ค่าเช่าห้อง', amt:Number(draft.rent)||0},
+    {name:'ค่าน้ำประปา'+(w.minApplied?' *':''), key:'ค่าน้ำประปา',
+      p:prev.water, c:cur.water, u:w.billed, amt:(w.billed||0)*state.settings.waterRate},
+    {name:'ค่าไฟฟ้า'+(e.minApplied?' *':''), key:'ค่าไฟฟ้า',
+      p:prev.elec, c:cur.elec, u:e.billed, amt:(e.billed||0)*state.settings.elecRate},
+    {name:'ค่าส่วนกลาง', key:'ค่าส่วนกลาง', amt:Number(draft.common)||0},
+    {name:'ค่าปรับ', key:'ค่าปรับ', amt:Number(draft.fine)||0, hideIfZero:true},
+    {name:'ค่าโทรศัพท์', key:'ค่าโทรศัพท์', amt:Number(draft.phone)||0, hideIfZero:true},
+    {name:'ค่าที่จอดรถ', key:'ค่าที่จอดรถ', amt:Number(draft.parking)||0, hideIfZero:true},
+    {name:'ยอดค้างชำระเดิม', key:'ยอดค้างชำระเดิม', amt:Number(draft.arrears)||0, hideIfZero:true},
+  ];
+  const total = items.reduce((s,i)=>s+i.amt, 0);
+  const [y,m] = state.month.split('-');
+  return {room, type: rm.type||'พัดลม', tenant: t? tenantName(t) : '', moveInDate:t? (t.moveInDate||'') : '',
+    items, total, minApplied: w.minApplied||e.minApplied,
+    wMin:w.minApplied, eMin:e.minApplied,
+    no:`INV-${+y+543}${m}-${room}`, due:draft.due||dueOf(state.month)};
+}
+
+function renderBill(room){
+  const d = billData(room || $('billRoom').value);
+  $('bpNo').textContent = 'เลขที่ '+d.no;
+  $('bpRoom').textContent = d.room;
+  $('bpRoomType').textContent = '('+d.type+')';
+  $('bpTenant').textContent = d.tenant || '—';
+  $('bpMoveIn').textContent = d.moveInDate ? ('เข้าพักตั้งแต่ '+thaiDate(d.moveInDate)) : 'เข้าพักตั้งแต่ —';
+  $('bpMonth').textContent = thaiMonth(state.month);
+  $('bpWifi').textContent = state.settings.wifi || '';
+  $('bpTel').textContent = state.settings.contactPhone || '';
+  $('bpRows').innerHTML = d.items.map(i=>{
+    if(i.hideIfZero && !i.amt) return '';
+    const meter = i.u!=null || i.p!=null;
+    return `<tr><td>${i.name}</td><td>${meter?(i.p??'—'):''}</td><td>${meter?(i.c??'—'):''}</td>
+      <td>${i.u!=null? i.u : ''}</td><td>${fmt(i.amt)}</td></tr>`;
+  }).join('');
+  $('bpTotal').textContent = fmt(d.total)+' บาท';
+  $('bpDue').textContent = thaiDate(d.due);
+  const minParts = [];
+  if(d.wMin) minParts.push('น้ำขั้นต่ำ '+state.settings.waterMinUnits+' หน่วย');
+  if(d.eMin) minParts.push('ไฟขั้นต่ำ '+state.settings.elecMinUnits+' หน่วย');
+  $('bpMinNote').style.display = d.minApplied? '' : 'none';
+  $('bpMinNote').textContent = d.minApplied? '* คิดตามหน่วยขั้นต่ำ ('+minParts.join(', ')+')' : '';
+  $('bpPayNote').textContent = state.settings.payNote||'';
+  return d;
+}
+
+function renderBillHistory(){
+  const room = $('billRoom').value;
+  const hist = state.bills.filter(b=>b.room===room)
+    .sort((a,b)=> b.month.localeCompare(a.month)).slice(0,12);
+  $('billHistory').innerHTML = hist.length? hist.map(b=>
+    `<div class="hist-item"><span>${thaiMonthShort(b.month)}</span>
+      <span><b>${fmt(b.total)}</b> บาท
+      <span class="badge ${b.status==='ชำระแล้ว'?'green':b.status==='ยกเลิก'?'gray':'amber'}" style="margin-left:6px">${dispStatus(b)}</span></span></div>`).join('')
+    : '<p class="hint">ยังไม่มีประวัติบิลของห้องนี้</p>';
+}
+
+/* ================= ส่งออก PNG / PDF ================= */
+async function captureBill(){
+  return html2canvas($('billPaper'), {scale:2.5, backgroundColor:'#ffffff', useCORS:true});
+}
+async function downloadPNG(){
+  const d = renderBill();
+  const canvas = await captureBill();
+  const a = document.createElement('a');
+  a.download = `บิล_${d.room}_${state.month}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click(); toast('บันทึกภาพ PNG แล้ว ✓');
+}
+function canvasToPdfPage(pdf, canvas, addNew){
+  if(addNew) pdf.addPage();
+  const pw = pdf.internal.pageSize.getWidth();
+  const ph = pdf.internal.pageSize.getHeight();
+  const ratio = canvas.height / canvas.width;
+  let w = pw - 20, h = w * ratio;
+  if(h > ph - 20){ h = ph - 20; w = h / ratio; }
+  pdf.addImage(canvas.toDataURL('image/jpeg', .95), 'JPEG', (pw-w)/2, 10, w, h);
+}
+async function downloadPDF(){
+  const d = renderBill();
+  const canvas = await captureBill();
+  const pdf = new jspdf.jsPDF({unit:'mm', format:'a5'});
+  canvasToPdfPage(pdf, canvas, false);
+  pdf.save(`บิล_${d.room}_${state.month}.pdf`); toast('บันทึก PDF แล้ว ✓');
+}
+function exportRooms(){
+  const officeRooms = ['101', '102'];
+  return state.rooms.filter(r => {
+    const room = String(r.room);
+    const tenant = activeTenantOf(room);
+    return !officeRooms.includes(room) && !!tenant;
+  });
+}
+
+
+function sortedRoomRecords(){
+  return state.rooms.slice().sort((a,b)=>
+    String(a.room).localeCompare(String(b.room), 'th', {numeric:true})
+  );
+}
+
+function billItemAmount(bill, key){
+  const item = bill.items.find(i => (i.key || i.name) === key);
+  return item ? Number(item.amt) || 0 : 0;
+}
+
+function generatedStamp(){
+  const d = new Date();
+  return 'จัดทำเมื่อ ' + d.toLocaleDateString('th-TH', {
+    day:'2-digit', month:'2-digit', year:'numeric'
+  }) + ' ' + d.toLocaleTimeString('th-TH', {
+    hour:'2-digit', minute:'2-digit'
+  }) + ' น.';
+}
+
+function buildExecutiveSummaries(){
+  saveCurrentBillDraft();
+  const officeRooms = ['101','102'];
+  let invoiceTotal = 0;
+  let waterTotal = 0;
+  let elecTotal = 0;
+  const amountRows = [];
+  const utilityRows = [];
+
+  sortedRoomRecords().forEach(rm => {
+    const room = String(rm.room);
+    const tenant = activeTenantOf(room);
+    const occupied = !!tenant;
+    const isOffice = officeRooms.includes(room);
+    const bill = billData(room);
+
+    let amountText = '—';
+    let remark = '';
+    let remarkClass = '';
+    if(isOffice){
+      remark = 'สำนักงาน';
+      remarkClass = 'summary-office';
+    } else if(!occupied){
+      remark = 'ว่าง';
+      remarkClass = 'summary-vacant';
+    } else {
+      amountText = fmt(bill.total);
+      invoiceTotal += Number(bill.total) || 0;
+    }
+
+    amountRows.push(`<tr>
+      <td class="center"><b>${esc(room)}</b></td>
+      <td>${esc(rm.type || typeOf(room) || '-')}</td>
+      <td>${occupied ? esc(tenant.firstName || '') : '—'}</td>
+      <td>${occupied ? esc(tenant.lastName || '') : '—'}</td>
+      <td class="num">${amountText}</td>
+      <td class="center ${remarkClass}">${remark}</td>
+    </tr>`);
+
+    let waterText = '—';
+    let elecText = '—';
+    if(occupied && !isOffice){
+      const water = billItemAmount(bill, 'ค่าน้ำประปา');
+      const elec = billItemAmount(bill, 'ค่าไฟฟ้า');
+      waterText = fmt(water);
+      elecText = fmt(elec);
+      waterTotal += water;
+      elecTotal += elec;
+    }
+
+    utilityRows.push(`<tr>
+      <td class="center"><b>${esc(room)}</b></td>
+      <td>${esc(rm.type || typeOf(room) || '-')}</td>
+      <td>${occupied ? esc(tenant.firstName || '') : '—'}</td>
+      <td>${occupied ? esc(tenant.lastName || '') : '—'}</td>
+      <td class="num">${waterText}</td>
+      <td class="num">${elecText}</td>
+    </tr>`);
+  });
+
+  $('sum1Month').textContent = 'ประจำเดือน ' + thaiMonth(state.month);
+  $('sum1Rows').innerHTML = amountRows.join('');
+  $('sum1Total').textContent = fmt(invoiceTotal);
+  $('sum1Grand').textContent = fmt(invoiceTotal) + ' บาท';
+  $('sum1Generated').textContent = generatedStamp();
+
+  $('sum2Month').textContent = 'ประจำเดือน ' + thaiMonth(state.month);
+  $('sum2Rows').innerHTML = utilityRows.join('');
+  $('sum2WaterTotal').textContent = fmt(waterTotal);
+  $('sum2ElecTotal').textContent = fmt(elecTotal);
+  $('sum2WaterCard').textContent = fmt(waterTotal) + ' บาท';
+  $('sum2ElecCard').textContent = fmt(elecTotal) + ' บาท';
+  $('sum2Grand').textContent = fmt(waterTotal + elecTotal) + ' บาท';
+  $('sum2Generated').textContent = generatedStamp();
+}
+
+async function captureSummaryPaper(id){
+  if(document.fonts && document.fonts.ready) await document.fonts.ready;
+  return html2canvas($(id), {
+    scale:2,
+    backgroundColor:'#ffffff',
+    useCORS:true,
+    logging:false,
+    windowWidth:794,
+    windowHeight:1123
+  });
+}
+
+function addCanvasToCurrentPdfPage(pdf, canvas, margin=6){
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const ratio = canvas.height / canvas.width;
+  let w = pageW - margin * 2;
+  let h = w * ratio;
+  if(h > pageH - margin * 2){
+    h = pageH - margin * 2;
+    w = h / ratio;
+  }
+  pdf.addImage(
+    canvas.toDataURL('image/jpeg', 0.96),
+    'JPEG',
+    (pageW - w) / 2,
+    (pageH - h) / 2,
+    w,
+    h
+  );
+}
+
+async function downloadAllPNGZip(){
+  if(typeof JSZip === 'undefined'){ toast('ยังโหลด JSZip ไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ'); return; }
+  const rooms = exportRooms();
+  if(!rooms.length){ toast('ไม่มีห้องที่ต้องสร้างบิล'); return; }
+  const keepRoom = $('billRoom').value;
+  const zip = new JSZip();
+  $('btnAllPNG').disabled = true;
+  toast('กำลังสร้างรูปบิลทุกห้อง…');
+  try{
+    for(let i = 0; i < rooms.length; i++){
+      const room = String(rooms[i].room);
+      renderBill(room);
+      await sleep(80);
+      const canvas = await captureBill();
+      const base64 = canvas.toDataURL('image/png').split(',')[1];
+      zip.file(`บิล_${room}_${state.month}.png`, base64, {base64:true});
+    }
+    const blob = await zip.generateAsync({type:'blob'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `บิลทุกห้อง_${state.month}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('ดาวน์โหลด PNG ทุกห้องเป็น ZIP แล้ว ✓');
+  }catch(e){ toast('สร้างรูปบิลไม่สำเร็จ: ' + e.message); }
+  if(keepRoom) renderBill(keepRoom);
+  $('btnAllPNG').disabled = false;
+}
+
+async function downloadAllPDF(){
+  const rooms = exportRooms();
+  if(!rooms.length){ toast('ไม่มีห้องที่ต้องสร้าง PDF'); return; }
+
+  toast('กำลังสร้างหน้าสรุปและบิลทุกห้อง…');
+  $('btnAllPDF').disabled = true;
+  const keepRoom = $('billRoom').value;
+
+  try{
+    buildExecutiveSummaries();
+    await sleep(60);
+
+    // หน้า 1: สรุปยอดเรียกเก็บ (A4 แนวตั้ง)
+    const summary1 = await captureSummaryPaper('summaryAmountPaper');
+    const pdf = new jspdf.jsPDF({unit:'mm', format:'a4', orientation:'portrait'});
+    addCanvasToCurrentPdfPage(pdf, summary1, 5);
+
+    // หน้า 2: สรุปค่าน้ำและค่าไฟ (A4 แนวตั้ง)
+    const summary2 = await captureSummaryPaper('summaryUtilityPaper');
+    pdf.addPage('a4', 'portrait');
+    addCanvasToCurrentPdfPage(pdf, summary2, 5);
+
+    // หน้า 3 เป็นต้นไป: บิล 2 ใบต่อหน้า (A4 แนวนอน)
+    pdf.addPage('a4', 'landscape');
+    const margin = 8, gap = 6;
+    let pageW = pdf.internal.pageSize.getWidth();
+    let pageH = pdf.internal.pageSize.getHeight();
+    let slotW = (pageW - (margin * 2) - gap) / 2;
+    let slotH = pageH - (margin * 2);
+
+    for(let i = 0; i < rooms.length; i++){
+      const room = String(rooms[i].room);
+      if(i > 0 && i % 2 === 0){
+        pdf.addPage('a4', 'landscape');
+        pageW = pdf.internal.pageSize.getWidth();
+        pageH = pdf.internal.pageSize.getHeight();
+        slotW = (pageW - (margin * 2) - gap) / 2;
+        slotH = pageH - (margin * 2);
+      }
+
+      renderBill(room);
+      await sleep(80);
+      const canvas = await captureBill();
+      const ratio = canvas.height / canvas.width;
+      let w = slotW, h = w * ratio;
+      if(h > slotH){ h = slotH; w = h / ratio; }
+      const col = i % 2;
+      const x = margin + col * (slotW + gap) + (slotW - w) / 2;
+      const y = margin + (slotH - h) / 2;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, y, w, h);
+    }
+
+    pdf.save(`สรุปและบิลทุกห้อง_${state.month}.pdf`);
+    toast('สร้าง PDF พร้อมหน้าสรุป 2 หน้าแล้ว ✓');
+  }catch(e){
+    console.error(e);
+    toast('สร้าง PDF ไม่สำเร็จ: ' + e.message);
+  } finally {
+    if(keepRoom) renderBill(keepRoom);
+    $('btnAllPDF').disabled = false;
+  }
+}
+async function saveBillToSheet(){
+  const d = renderBill();
+  const flat = {}; d.items.forEach(i=>flat[i.key||i.name]=i.amt);
+  try{
+    await api('savebill', {}, {month:state.month,
+      bill:{room:d.room, no:d.no, due:d.due, total:d.total, items:flat}});
+    await loadBills();
+    renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
+    toast('บันทึกยอดบิลลง Firebase แล้ว ✓');
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+}
+async function saveAllBillsToSheet(){
+  const btn = $('btnSaveAllBills');
+  if(btn) btn.disabled = true;
+  const keepRoom = $('billRoom').value;
+  const officeRooms = ['101', '102'];
+  toast('กำลังบันทึกบิลทุกห้องของเดือนนี้…');
+  let saved = 0, skipped = 0, failed = 0;
+  try{
+    for(const rm of state.rooms){
+      const room = String(rm.room);
+      const tenant = activeTenantOf(room);
+      if(officeRooms.includes(room)){ skipped++; continue; }
+      if(!tenant){ skipped++; continue; }
+      try{
+        const d = billData(room);
+        const flat = {};
+        d.items.forEach(i => flat[i.key || i.name] = i.amt);
+        await api('savebill', {}, {month: state.month,
+          bill: {room: d.room, no: d.no, due: d.due, total: d.total, items: flat}});
+        saved++;
+      }catch(err){ console.error('save bill failed room', room, err); failed++; }
+    }
+    await loadBills();
+    if(keepRoom && [...$('billRoom').options].some(o => o.value === keepRoom)){
+      $('billRoom').value = keepRoom;
+    }
+    renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
+    toast(`บันทึกบิลแล้ว ${saved} ห้อง, ข้าม ${skipped} ห้อง${failed ? ', ล้มเหลว '+failed+' ห้อง' : ''} ✓`);
+  }catch(e){ toast('บันทึกบิลทุกห้องไม่สำเร็จ: ' + e.message); }
+  if(btn) btn.disabled = false;
+}
+
+/* ================= แท็บรายการบิล ================= */
+function dispStatus(b){
+  if(b.status==='ชำระแล้ว' || b.status==='ยกเลิก') return b.status;
+  if(b.due && b.due < todayISO()) return 'ค้างชำระ';
+  return 'รอชำระ';
+}
+function billOfSelectedMonth(room){
+  return state.bills.find(b =>
+    b.month === state.month &&
+    String(b.room) === String(room) &&
+    b.status !== 'ยกเลิก'
+  );
+}
+
+function renderInvoiceSummary(){
+  if(!$('invoiceSummaryRows')) return;
+  $('invoiceSummaryMonth').textContent = thaiMonth(state.month);
+  const officeRooms = ['101', '102'];
+  let sum = 0;
+  const rows = state.rooms
+    .slice()
+    .sort((a,b) => String(a.room).localeCompare(String(b.room), 'th', {numeric:true}))
+    .map(r => {
+      const room = String(r.room);
+      const tenant = activeTenantOf(room);
+      const occupied = !!tenant;
+      const bill = billOfSelectedMonth(room);
+      const isOffice = officeRooms.includes(room);
+      let amountHtml = '';
+      if(isOffice){ amountHtml = '---'; }
+      else if(!occupied){ amountHtml = '---'; }
+      else if(bill){
+        amountHtml = fmt(bill.total) + ' บาท';
+        sum += Number(bill.total) || 0;
+      } else {
+        amountHtml = '<span class="hint">ยังไม่ออกบิล</span>';
+      }
+      return `<tr>
+          <td><b>${room}</b></td>
+          <td>${r.type || typeOf(room) || '-'}</td>
+          <td><span class="badge ${occupied ? 'green' : 'gray'}">${occupied ? 'มีคนอยู่' : 'ว่าง'}</span></td>
+          <td>${tenant ? esc(tenant.firstName || '') : '-'}</td>
+          <td>${tenant ? esc(tenant.lastName || '') : '-'}</td>
+          <td class="num">${amountHtml}</td>
+        </tr>`;
+    });
+  $('invoiceSummaryRows').innerHTML = rows.join('');
+  $('invoiceSummaryTotal').textContent = fmt(sum) + ' บาท';
+}
+
+function renderBillsTable(){
+  const f = $('billsFilter').value;
+  let list = state.bills.slice();
+  if(f==='month') list = list.filter(b=>b.month===state.month);
+  if(f==='unpaid') list = list.filter(b=>b.status!=='ชำระแล้ว'&&b.status!=='ยกเลิก');
+  list.sort((a,b)=> b.month.localeCompare(a.month) || String(a.room).localeCompare(String(b.room)));
+  $('billsRows').innerHTML = list.length? list.map(b=>{
+    const st = dispStatus(b);
+    const tenant = activeTenantOf(b.room);
+    const cls = st==='ชำระแล้ว'?'green':st==='ค้างชำระ'?'red':st==='ยกเลิก'?'gray':'amber';
+    const canPay = st==='รอชำระ'||st==='ค้างชำระ';
+    return `<tr>
+      <td>${thaiMonthShort(b.month)}</td>
+      <td><b>${b.room}</b></td>
+      <td>${tenant? esc(tenantName(tenant)):'-'}</td>
+      <td class="num">${fmt(b.total)}</td>
+      <td>${thaiDateShort(b.due)}</td>
+      <td><span class="badge ${cls}">${st}</span></td>
+      <td>${thaiDateShort(b.paidDate)}</td>
+      <td>${canPay? `<button class="btn btn-primary btn-sm" onclick="markPaid('${b.month}','${b.room}')">✓ ชำระแล้ว</button>
+                     <button class="btn btn-ghost btn-sm" onclick="cancelBill('${b.month}','${b.room}')">ยกเลิก</button>`
+                  : st==='ชำระแล้ว'? `<button class="btn btn-ghost btn-sm" title="เปลี่ยนกลับเป็นรอชำระ" onclick="unpayBill('${b.month}','${b.room}')">↩︎</button>` : ''}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" class="hint" style="padding:18px">ยังไม่มีบิล${f==='month'? 'ของเดือนนี้ — สร้างจากแท็บ "ออกบิล" แล้วกด "บันทึกยอดบิลลง Sheet"':''}</td></tr>`;
+}
+async function setStatus(month, room, status){
+  try{
+    await api('setbillstatus', {}, {month, room, status, paidDate: status==='ชำระแล้ว'? todayISO():''});
+    const b = state.bills.find(x=>x.month===month&&String(x.room)===String(room));
+    if(b){ b.status=status; b.paidDate = status==='ชำระแล้ว'? todayISO():''; }
+    renderBillsTable(); renderInvoiceSummary(); renderBillHistory(); renderDashboard();
+    toast(status==='ชำระแล้ว'? 'บันทึกว่าชำระแล้ว ✓' : 'อัปเดตสถานะแล้ว ✓');
+  }catch(e){ toast('อัปเดตไม่สำเร็จ: '+e.message); }
+}
+function markPaid(m,r){ setStatus(m,r,'ชำระแล้ว'); }
+function cancelBill(m,r){ if(confirm('ยกเลิกบิลห้อง '+r+' ?')) setStatus(m,r,'ยกเลิก'); }
+function unpayBill(m,r){ setStatus(m,r,'รอชำระ'); }
+$('billsFilter').addEventListener('change', renderBillsTable);
+$('btnSaveAllBills').addEventListener('click', saveAllBillsToSheet);
+
+/* ═══════════════ ★ โมดูลล้างแอร์ ═══════════════ */
+function acBadge(st){
+  return st==='เกินกำหนด'?'red':st==='ใกล้ครบกำหนด'?'amber':st==='ปกติ'?'green':'gray';
+}
+function acDaysText(d){
+  if(d===null||d===undefined) return '—';
+  if(d<0) return 'เกิน '+(-d)+' วัน';
+  if(d===0) return 'วันนี้';
+  return 'อีก '+d+' วัน';
+}
+
+async function loadAC(force){
+  if(!state.connected){
+    const msg = '<p class="hint">⚠️ ต้องเชื่อมต่อ Firebase ก่อนใช้งานโมดูลล้างแอร์ — ไปที่ ⚙️ ตั้งค่า</p>';
+    $('acStatGrid').innerHTML = msg;
+    $('acAlertList').innerHTML = msg;
+    $('acStatusBody').innerHTML = '<tr><td colspan="8" class="hint" style="padding:18px">ยังไม่ได้เชื่อมต่อ</td></tr>';
+    $('acHistBody').innerHTML = '<tr><td colspan="8" class="hint" style="padding:18px">ยังไม่ได้เชื่อมต่อ</td></tr>';
+    $('acRoomsBody').innerHTML = '<tr><td colspan="4" class="hint" style="padding:18px">ยังไม่ได้เชื่อมต่อ</td></tr>';
+    return;
+  }
+  if(state.ac.loaded && !force){ renderACAll(); return; }
+  $('acStatGrid').innerHTML = '<p class="hint">กำลังโหลดข้อมูลแอร์…</p>';
+  try{
+    const r = await api('acdata');
+    state.ac = { rooms:r.rooms||[], log:r.log||[], summary:r.summary||[],
+      stats:r.stats||{}, loaded:true };
+    renderACAll();
+  }catch(e){
+    toast('โหลดข้อมูลแอร์ไม่สำเร็จ: '+e.message);
+    $('acStatGrid').innerHTML = '<p class="hint">โหลดข้อมูลไม่สำเร็จ: '+esc(e.message)+'</p>';
+  }
+}
+function renderACAll(){
+  renderACDash(); fillACSelects(); fillACTypeFilter();
+  renderACStatus(); renderACHistory(); renderACRooms(); renderACRecent();
+  if(!$('acDate').value) $('acDate').value = todayISO();
+}
+
+/* ---- แอร์: ภาพรวม ---- */
+function renderACDash(){
+  if(!state.ac.loaded) return;
+  const s = state.ac.stats;
+  const cards = [
+    {v:s.totalAC||0, l:'แอร์ทั้งหมด (เครื่อง)'},
+    {v:s.overdue||0, l:'เกินกำหนดล้าง', cls:(s.overdue?'bad':'')},
+    {v:s.dueSoon||0, l:'ใกล้ครบกำหนด', cls:(s.dueSoon?'warn':'')},
+    {v:s.ok||0, l:'สถานะปกติ', cls:'good'},
+    {v:s.cleanedThisYear||0, l:'ล้างแล้วปีนี้'},
+    {v:s.neverCleaned||0, l:'ยังไม่เคยล้าง'}
+  ];
+  $('acStatGrid').innerHTML = cards.map(c=>
+    `<div class="stat ${c.cls||''}"><div class="v">${c.v}</div><div class="l">${c.l}</div></div>`).join('');
+
+  const due = state.ac.summary.filter(r=>r.status==='เกินกำหนด'||r.status==='ใกล้ครบกำหนด');
+  if(!due.length){
+    $('acAlertList').innerHTML = '<p class="hint">🎉 ไม่มีเครื่องที่ต้องล้างด่วน ทุกห้องอยู่ในเกณฑ์ปกติ</p>';
+    return;
+  }
+  $('acAlertList').innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr>'+
+    '<th>ห้อง</th><th>ประเภท</th><th>ล้างล่าสุด</th><th>ครบกำหนด</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
+    due.map(r=>`<tr><td><b>${r.roomNo}</b></td><td><span class="badge type">${esc(r.type)}</span></td>
+      <td>${thaiDate(r.lastClean)==='—'?'—':thaiDate(r.lastClean)}${r.neverCleaned?' <span class="pill">ยังไม่เคยล้าง</span>':''}</td>
+      <td>${thaiDate(r.nextDue)}</td>
+      <td><span class="badge ${acBadge(r.status)}">${r.status}</span> <span class="hint">${acDaysText(r.daysLeft)}</span></td>
+      <td><button class="btn btn-primary btn-sm" onclick="quickClean('${r.roomNo}')">บันทึกล้าง</button></td></tr>`).join('')+
+    '</tbody></table></div>';
+}
+
+/* ---- แอร์: สถานะรายห้อง ---- */
+function fillACTypeFilter(){
+  const types = [];
+  state.ac.summary.forEach(r=>{ if(types.indexOf(r.type)<0) types.push(r.type); });
+  const keep = $('acFType').value;
+  $('acFType').innerHTML = '<option value="">ทุกประเภท</option>'+
+    types.map(t=>`<option>${esc(t)}</option>`).join('');
+  if(keep && types.includes(keep)) $('acFType').value = keep;
+}
+function renderACStatus(){
+  if(!state.ac.loaded) return;
+  const fs = $('acFStatus').value, ft = $('acFType').value;
+  const rows = state.ac.summary.filter(r=>(!fs||r.status===fs)&&(!ft||r.type===ft));
+  $('acStatusCount').textContent = rows.length+' เครื่อง';
+  $('acStatusBody').innerHTML = rows.length? rows.map(r=>
+    `<tr><td><b>${r.roomNo}</b></td><td><span class="badge type">${esc(r.type)}</span></td>
+      <td>${thaiDate(r.installed)}</td>
+      <td>${thaiDate(r.lastClean)}${r.neverCleaned?' <span class="pill">ใหม่</span>':''}</td>
+      <td>${thaiDate(r.nextDue)}</td><td class="hint">${acDaysText(r.daysLeft)}</td>
+      <td><span class="badge ${acBadge(r.status)}">${r.status}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="quickClean('${r.roomNo}')">ล้าง</button></td></tr>`).join('')
+    : '<tr><td colspan="8" class="hint" style="padding:18px">ไม่มีข้อมูล</td></tr>';
+}
+$('acFStatus').addEventListener('change', renderACStatus);
+$('acFType').addEventListener('change', renderACStatus);
+
+/* ---- แอร์: บันทึกงาน ---- */
+function fillACSelects(){
+  const optsAll = state.ac.rooms.map(r=>
+    `<option value="${esc(r.roomNo)}">${esc(r.roomNo)} (${esc(r.type)})</option>`).join('');
+  const keepA = $('acRoom').value, keepH = $('acHRoom').value;
+  $('acRoom').innerHTML = optsAll;
+  $('acHRoom').innerHTML = '<option value="">ทุกห้อง</option>'+optsAll;
+  if(keepA) $('acRoom').value = keepA;
+  if(keepH) $('acHRoom').value = keepH;
+}
+function quickClean(room){
+  const nav = document.querySelector('#module-ac nav.tabs');
+  nav.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('#module-ac .tabpage').forEach(x=>x.classList.remove('active'));
+  nav.querySelector('button[data-tab="acadd"]').classList.add('active');
+  $('page-acadd').classList.add('active');
+  $('acRoom').value = room;
+  $('acAct').value = 'ล้างแอร์';
+  $('acDate').value = todayISO();
+  window.scrollTo(0,0);
+}
+async function submitACLog(){
+  const room = $('acRoom').value, date = $('acDate').value, act = $('acAct').value;
+  if(!room||!date){ toast('กรุณาเลือกห้องและวันที่'); return; }
+  if(!state.connected){ toast('ต้องเชื่อมต่อ Firebase ก่อน'); return; }
+  const btn = $('acSave'); btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+  let photoURL = '';
+  const file = $('acPhoto').files[0];
+  try{
+    if(file){
+      toast('กำลังอัปโหลดรูป…');
+      const up = await uploadFile('acphoto', {room:room}, file);
+      photoURL = up.url || '';
+    }
+    await api('acaddlog', {}, {date:date, room:room, activity:act,
+      note:$('acNote').value, cost:$('acCost').value,
+      vendor:$('acVendor').value, photoURL:photoURL});
+    toast('บันทึกงานเรียบร้อย ✓');
+    $('acNote').value=''; $('acCost').value=''; $('acVendor').value=''; $('acPhoto').value='';
+    await loadAC(true);
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  btn.disabled = false; btn.textContent = '💾 บันทึกงาน';
+}
+$('acSave').addEventListener('click', submitACLog);
+
+function renderACRecent(){
+  const rows = state.ac.log.slice(0,8);
+  $('acRecentLog').innerHTML = rows.length? rows.map(l=>
+    `<div class="hist-item"><span><b>${l.roomNo}</b> · ${esc(l.activity)}${l.note?' <span class="hint">('+esc(l.note)+')</span>':''}</span>
+      <span class="hint">${thaiDate(l.date)}</span></div>`).join('')
+    : '<p class="hint">ยังไม่มีบันทึก</p>';
+}
+
+/* ---- แอร์: ประวัติทั้งหมด ---- */
+function renderACHistory(){
+  if(!state.ac.loaded) return;
+  const hr = $('acHRoom').value, ha = $('acHAct').value;
+  const rows = state.ac.log.filter(l=>(!hr||l.roomNo===hr)&&(!ha||l.activity===ha));
+  $('acHistCount').textContent = rows.length+' รายการ';
+  $('acHistBody').innerHTML = rows.length? rows.map(l=>
+    `<tr><td>${thaiDate(l.date)}</td><td><b>${l.roomNo}</b></td>
+      <td>${esc(l.activity)}</td><td>${esc(l.note||'—')}</td>
+      <td class="num">${l.cost? Number(l.cost).toLocaleString('th-TH') : '—'}</td>
+      <td>${esc(l.vendor||'—')}</td>
+      <td>${l.photoURL? `<a href="${esc(l.photoURL)}" target="_blank">🖼 ดู</a>` : '—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="delACLog('${l.id}')">ลบ</button></td></tr>`).join('')
+    : '<tr><td colspan="8" class="hint" style="padding:18px">ไม่มีรายการ</td></tr>';
+}
+$('acHRoom').addEventListener('change', renderACHistory);
+$('acHAct').addEventListener('change', renderACHistory);
+async function delACLog(id){
+  if(!confirm('ลบรายการนี้?')) return;
+  try{
+    await api('acdeletelog', {}, {id:id});
+    toast('ลบแล้ว ✓');
+    await loadAC(true);
+  }catch(e){ toast('ลบไม่สำเร็จ: '+e.message); }
+}
+
+/* ---- แอร์: ห้อง / แอร์ ---- */
+function renderACRooms(){
+  if(!state.ac.loaded) return;
+  $('acRoomCount').textContent = state.ac.rooms.length+' ห้อง';
+  $('acRoomsBody').innerHTML = state.ac.rooms.length? state.ac.rooms.map(r=>
+    `<tr><td><b>${esc(r.roomNo)}</b></td><td><span class="badge type">${esc(r.type)}</span></td>
+      <td>${esc(r.note||'—')}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openACRoomModal('${esc(r.roomNo)}')">แก้ไข</button>
+      <button class="btn btn-danger btn-sm" onclick="delACRoom('${esc(r.roomNo)}')">ลบ</button></td></tr>`).join('')
+    : '<tr><td colspan="4" class="hint" style="padding:18px">ยังไม่มีห้อง — กด "＋ เพิ่มห้อง"</td></tr>';
+}
+function openACRoomModal(room){
+  const edit = state.ac.rooms.find(r=>r.roomNo===room);
+  $('acRoomModalTitle').textContent = edit? 'แก้ไขห้อง '+room : 'เพิ่มห้อง';
+  $('acmEditRoom').value = edit? room : '';
+  $('acmRoom').value = edit? edit.roomNo : '';
+  $('acmRoom').disabled = !!edit;
+  $('acmType').value = edit? edit.type : 'แอร์ S';
+  $('acmNote').value = edit? edit.note : '';
+  $('acRoomModalBg').classList.add('show');
+}
+$('acmSave').addEventListener('click', async ()=>{
+  const editRoom = $('acmEditRoom').value;
+  const room = $('acmRoom').value.trim(), type = $('acmType').value, note = $('acmNote').value;
+  if(!room){ toast('กรอกหมายเลขห้อง'); return; }
+  try{
+    await api(editRoom? 'acupdateroom':'acaddroom', {}, {room:room, type:type, note:note});
+    toast('บันทึกห้องแล้ว ✓');
+    $('acRoomModalBg').classList.remove('show');
+    await loadAC(true);
+  }catch(e){ toast(e.message||'ไม่สำเร็จ'); }
+});
+async function delACRoom(room){
+  if(!confirm('ลบห้อง '+room+'? (ประวัติงานเดิมยังอยู่)')) return;
+  try{
+    await api('acdeleteroom', {}, {room:room});
+    toast('ลบห้องแล้ว ✓');
+    await loadAC(true);
+  }catch(e){ toast('ลบไม่สำเร็จ: '+e.message); }
+}
+
+/* ================= โมดูลตั้งค่า ================= */
+function fillSettingsForm(){
+  $('setApiUrl').value = state.apiUrl;
+  $('setWaterRate').value = state.settings.waterRate;
+  $('setElecRate').value  = state.settings.elecRate;
+  $('setWaterMin').value  = state.settings.waterMinUnits;
+  $('setElecMin').value   = state.settings.elecMinUnits;
+  $('setCommon').value    = state.settings.commonFee;
+  $('setFine').value      = state.settings.fineFee ?? 0;
+  $('setWifi').value      = state.settings.wifi||'';
+  $('setContactPhone').value = state.settings.contactPhone||'';
+  $('setPayNote').value   = state.settings.payNote||'';
+  $('setAcInterval').value = state.settings.intervalMonths ?? 12;
+  $('setAcLead').value     = state.settings.leadDays ?? 30;
+  $('setAcFan').value      = state.settings.fanLabel || 'พัดลม';
+  $('hintWMin').textContent = state.settings.waterMinUnits;
+  $('hintEMin').textContent = state.settings.elecMinUnits;
+}
+function readSettingsForm(){
+  state.settings.waterRate = Number($('setWaterRate').value)||0;
+  state.settings.elecRate  = Number($('setElecRate').value)||0;
+  state.settings.waterMinUnits = Number($('setWaterMin').value)||0;
+  state.settings.elecMinUnits  = Number($('setElecMin').value)||0;
+  state.settings.commonFee = Number($('setCommon').value)||0;
+  state.settings.fineFee   = Number($('setFine').value)||0;
+  state.settings.wifi      = $('setWifi').value;
+  state.settings.contactPhone = $('setContactPhone').value;
+  state.settings.payNote   = $('setPayNote').value;
+  state.settings.intervalMonths = Number($('setAcInterval').value)||12;
+  state.settings.leadDays  = Number($('setAcLead').value)||30;
+  state.settings.fanLabel  = $('setAcFan').value.trim()||'พัดลม';
+  store.set('settings', state.settings);
+  $('hintWMin').textContent = state.settings.waterMinUnits;
+  $('hintEMin').textContent = state.settings.elecMinUnits;
+}
+
+/* ================= เริ่มต้น / อีเวนต์ ================= */
+$('monthInput').value = state.month;
+$('monthInput').addEventListener('change', async e=>{
+  state.month = e.target.value;
+  await loadMonth();
+  renderMeterGrid(); loadRoomIntoForm(); renderDashboard(); renderInvoiceSummary(); renderBillsTable(); renderMeterPhotos();
+});
+$('btnSaveReadings').addEventListener('click', saveReadings);
+$('billRoom').addEventListener('change', loadRoomIntoForm);
+['fRent','fArrears','fCommon','fFine','fPhone','fParking','fDue']
+  .forEach(id=>$(id).addEventListener('input', ()=>{
+    saveCurrentBillDraft();
+    renderBill();
+  }));
+$('btnPNG').addEventListener('click', downloadPNG);
+$('btnPDF').addEventListener('click', downloadPDF);
+$('btnAllPNG').addEventListener('click', downloadAllPNGZip);
+$('btnAllPDF').addEventListener('click', downloadAllPDF);
+$('btnPrint').addEventListener('click', ()=>{ renderBill(); window.print(); });
+$('btnSaveBill').addEventListener('click', saveBillToSheet);
+$('btnConnect').addEventListener('click', ()=>{});
+$('btnSaveLocal').addEventListener('click', ()=>{
+  readSettingsForm(); renderBill(); renderMeterGrid();
+  state.ac.loaded = false;
+  toast('บันทึกการตั้งค่าในเครื่องแล้ว ✓');
+});
+$('btnSaveRemote').addEventListener('click', async ()=>{
+  readSettingsForm(); renderBill(); renderMeterGrid();
+  if(!state.connected){ toast('ยังไม่ได้เชื่อมต่อ Firebase'); return; }
+  try{
+    await api('savesettings', {}, {settings:state.settings});
+    state.ac.loaded = false;   // รอบล้างเปลี่ยน → คำนวณสรุปแอร์ใหม่ครั้งถัดไป
+    toast('บันทึกการตั้งค่าขึ้น Firebase แล้ว ✓');
+  }catch(e){ toast('บันทึกไม่สำเร็จ'); }
+});
+
+
+Object.assign(window,{
+  showModule, uploadIdFor, editTenant, openMoveOut, markPaid, cancelBill, unpayBill,
+  quickClean, delACLog, openACRoomModal, delACRoom
+});
+
+$('authLoginBtn').addEventListener('click', async ()=>{
+  try{ await signInWithPopup(fbAuth, fbProvider); }
+  catch(e){ $('authGateStatus').className='auth-status bad'; $('authGateStatus').textContent='Login ไม่สำเร็จ: '+e.message; }
+});
+$('authLogoutBtn').addEventListener('click', ()=>signOut(fbAuth));
+
+onAuthStateChanged(fbAuth, async user=>{
+  currentAuthUser = user || null;
+  currentAuthorizedUser = null;
+
+  if(!user){
+    $('authGate').classList.remove('hidden');
+    $('authGateStatus').className='auth-status';
+    $('authGateStatus').textContent='กรุณา Sign in ด้วย Google Account ที่ได้รับอนุญาต';
+    $('authLoginBtn').style.display='block';
+    $('authUserChip').style.display='none';
+    return;
+  }
+
+  $('authLoginBtn').style.display='none';
+  $('authGateStatus').className='auth-status';
+  $('authGateStatus').textContent='กำลังตรวจสอบสิทธิ์ '+user.email+'…';
+
+  try{
+    const s = await getDoc(doc(fbDb,'authorizedUsers',user.email));
+    if(!s.exists() || s.data().active!==true){
+      $('authGateStatus').className='auth-status bad';
+      $('authGateStatus').textContent='Access denied: '+user.email;
+      return;
+    }
+    currentAuthorizedUser = s.data();
+    $('authGateStatus').className='auth-status ok';
+    $('authGateStatus').textContent='กำลังโหลดระบบ…';
+    $('authUserText').textContent=(currentAuthorizedUser.name||user.email)+' · '+(currentAuthorizedUser.role||'');
+    $('authUserChip').style.display='flex';
+
+    fillSettingsForm();
+    await loadMonth();
+    await connect();
+    $('authGate').classList.add('hidden');
+  }catch(e){
+    $('authGateStatus').className='auth-status bad';
+    $('authGateStatus').textContent='Firebase error: '+e.message;
+  }
+});
+</script>
+</body>
+</html>
