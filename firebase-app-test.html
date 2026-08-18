@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>กนกรัศม์ — Apartment Management (Firebase v3)</title>
+<title>กนกรัศม์ — Apartment Management (Firebase v4)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -892,6 +892,57 @@ const DEMO_PREV = {'101':{water:120,elec:4310},'102':{water:98,elec:3985},'201':
   '202':{water:187,elec:4770},'301':{water:64,elec:2890},'401':{water:143,elec:5602},
   '501':{water:77,elec:3140},'503':{water:156,elec:4468}};
 
+
+/* ================= Role / Permission ================= */
+function currentRole(){
+  return String(currentAuthorizedUser?.role || '');
+}
+function isAdmin(){ return currentRole()==='admin'; }
+function isManager(){ return currentRole()==='manager'; }
+function isStaff(){ return currentRole()==='staff'; }
+function canManageBilling(){ return isAdmin() || isManager(); }
+function canMarkPaid(){ return isAdmin() || isManager(); }
+function canCancelBill(){ return isAdmin(); }
+function canMoveOutTenant(){ return isAdmin() || isManager(); }
+function canEditSettings(){ return isAdmin(); }
+function canDeleteACLog(){ return isAdmin(); }
+function canManageACRooms(){ return isAdmin() || isManager(); }
+
+function applyRolePermissions(){
+  const role = currentRole();
+
+  // Settings: admin only
+  const setCard = document.querySelector('.home-card.c-set');
+  if(setCard) setCard.style.display = canEditSettings() ? '' : 'none';
+
+  // Billing financial adjustments: admin / manager only
+  ['fRent','fArrears','fCommon','fFine','fPhone','fParking','fDue'].forEach(id=>{
+    const el=$(id); if(el) el.disabled = !canManageBilling();
+  });
+  ['btnSaveBill','btnSaveAllBills'].forEach(id=>{
+    const el=$(id); if(el) el.style.display = canManageBilling() ? '' : 'none';
+  });
+
+  // Settings controls
+  if($('btnSaveLocal')) $('btnSaveLocal').style.display = canEditSettings() ? '' : 'none';
+  if($('btnSaveRemote')) $('btnSaveRemote').style.display = canEditSettings() ? '' : 'none';
+
+  // Tenant modal: staff may edit tenant data, but not room pricing/type defaults
+  if($('tmType')) $('tmType').disabled = isStaff();
+  if($('tmApplyRent')) $('tmApplyRent').disabled = isStaff();
+
+  // AC room master tab: admin/manager only
+  const acRoomTab = document.querySelector('#module-ac nav.tabs button[data-tab="acrooms"]');
+  if(acRoomTab) acRoomTab.style.display = canManageACRooms() ? '' : 'none';
+
+  // If someone navigated directly to Settings without permission, return home
+  if(!canEditSettings() && $('module-setting')?.classList.contains('active')){
+    showModule('home');
+  }
+
+  document.body.dataset.role = role;
+}
+
 /* ================= ยูทิลิตี ================= */
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -920,6 +971,10 @@ function tenantName(t){ return t? [t.firstName,t.lastName].filter(Boolean).join(
 
 /* ================= สลับโมดูล / แท็บ ================= */
 function showModule(name){
+  if(name==='setting' && !canEditSettings()){
+    toast('เฉพาะ Admin เท่านั้นที่แก้การตั้งค่าได้');
+    name='home';
+  }
   document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
   $('module-'+name).classList.add('active');
   $('monthPickWrap').style.display = name==='bill' ? 'flex' : 'none';
@@ -1060,7 +1115,7 @@ async function api(action, params={}, data){
       status:ex.status||'active', idImageFileId:ex.idImageFileId||'', idImageUrl:ex.idImageUrl||'',
       createdAt:ex.createdAt||new Date().toISOString(), updatedAt:new Date().toISOString()
     },{merge:true});
-    if(data.roomType){
+    if(data.roomType && !isStaff()){
       const patch={type:data.roomType};
       if(data.applyDefaultRent) patch.rent=ROOM_TYPES[data.roomType]||0;
       await setDoc(doc(fbDb,'rooms',String(data.room)),patch,{merge:true});
@@ -1154,6 +1209,7 @@ async function loadBills(){
 function renderAll(){
   fillSettingsForm(); renderMeterGrid(); refreshBillForm();
   renderTenants(); renderBillsTable(); renderInvoiceSummary(); renderDashboard(); renderMeterPhotos();
+  applyRolePermissions();
 }
 
 /* ================= การคำนวณหน่วย (ขั้นต่ำ น้ำ/ไฟ) ================= */
@@ -1245,7 +1301,7 @@ function renderTenants(){
             : `<button class="btn btn-ghost btn-sm" onclick="uploadIdFor('${t.tenantId}')">📷 อัปโหลด</button>`}</td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="editTenant('${t.tenantId}')">แก้ไข</button>
-        ${active? `<button class="btn btn-warn btn-sm" onclick="openMoveOut('${t.tenantId}')">ย้ายออก</button>`:''}
+        ${active && canMoveOutTenant()? `<button class="btn btn-warn btn-sm" onclick="openMoveOut('${t.tenantId}')">ย้ายออก</button>`:''}
       </td></tr>`;
   }).join('') : '<tr><td colspan="10" class="hint" style="padding:18px">ยังไม่มีข้อมูลผู้พัก — กด "＋ เพิ่มผู้พักใหม่"</td></tr>';
 }
@@ -1331,6 +1387,7 @@ function uploadIdFor(tenantId){
 
 let moveOutId = null;
 function openMoveOut(id){
+  if(!canMoveOutTenant()){ toast('บัญชีนี้ไม่มีสิทธิ์บันทึกย้ายออก'); return; }
   const t = state.tenants.find(x=>x.tenantId===id); if(!t) return;
   moveOutId = id;
   $('moName').innerHTML = `ห้อง <b>${t.room}</b> — ${esc(tenantName(t))}`;
@@ -1487,7 +1544,7 @@ async function loadBillDrafts(){
 }
 
 async function persistBillDraft(room){
-  if(!currentAuthorizedUser || !room) return;
+  if(!currentAuthorizedUser || !room || !canManageBilling()) return;
   const key = billDraftKey(room);
   const d = state.billDrafts[key];
   if(!d) return;
@@ -1549,6 +1606,7 @@ function getBillDraft(room){
 }
 
 function saveCurrentBillDraft(){
+  if(!canManageBilling()) return;
   const room = $('billRoom').value;
   if(!room) return;
   state.billDrafts[billDraftKey(room)] = {
@@ -1901,6 +1959,7 @@ async function downloadAllPDF(){
   }
 }
 async function saveBillToSheet(){
+  if(!canManageBilling()){ toast('บัญชีนี้ไม่มีสิทธิ์บันทึก/แก้ยอดบิล'); return; }
   saveCurrentBillDraft();
   await persistBillDraft($('billRoom').value);
   const d = renderBill();
@@ -1914,6 +1973,7 @@ async function saveBillToSheet(){
   }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
 }
 async function saveAllBillsToSheet(){
+  if(!canManageBilling()){ toast('บัญชีนี้ไม่มีสิทธิ์บันทึก/แก้ยอดบิล'); return; }
   saveCurrentBillDraft();
   await persistBillDraft($('billRoom').value);
   const btn = $('btnSaveAllBills');
@@ -2016,9 +2076,14 @@ function renderBillsTable(){
       <td>${thaiDateShort(b.due)}</td>
       <td><span class="badge ${cls}">${st}</span></td>
       <td>${thaiDateShort(b.paidDate)}</td>
-      <td>${canPay? `<button class="btn btn-primary btn-sm" onclick="markPaid('${b.month}','${b.room}')">✓ ชำระแล้ว</button>
-                     <button class="btn btn-ghost btn-sm" onclick="cancelBill('${b.month}','${b.room}')">ยกเลิก</button>`
-                  : st==='ชำระแล้ว'? `<button class="btn btn-ghost btn-sm" title="เปลี่ยนกลับเป็นรอชำระ" onclick="unpayBill('${b.month}','${b.room}')">↩︎</button>` : ''}</td>
+      <td>${
+        canPay && canMarkPaid()
+          ? `<button class="btn btn-primary btn-sm" onclick="markPaid('${b.month}','${b.room}')">✓ ชำระแล้ว</button>
+             ${canCancelBill()? `<button class="btn btn-ghost btn-sm" onclick="cancelBill('${b.month}','${b.room}')">ยกเลิก</button>`:''}`
+          : st==='ชำระแล้ว' && canMarkPaid()
+            ? `<button class="btn btn-ghost btn-sm" title="เปลี่ยนกลับเป็นรอชำระ" onclick="unpayBill('${b.month}','${b.room}')">↩︎</button>`
+            : ''
+      }</td>
     </tr>`;
   }).join('') : `<tr><td colspan="8" class="hint" style="padding:18px">ยังไม่มีบิล${f==='month'? 'ของเดือนนี้ — สร้างจากแท็บ "ออกบิล" แล้วกด "บันทึกยอดบิลลง Sheet"':''}</td></tr>`;
 }
@@ -2031,9 +2096,9 @@ async function setStatus(month, room, status){
     toast(status==='ชำระแล้ว'? 'บันทึกว่าชำระแล้ว ✓' : 'อัปเดตสถานะแล้ว ✓');
   }catch(e){ toast('อัปเดตไม่สำเร็จ: '+e.message); }
 }
-function markPaid(m,r){ setStatus(m,r,'ชำระแล้ว'); }
-function cancelBill(m,r){ if(confirm('ยกเลิกบิลห้อง '+r+' ?')) setStatus(m,r,'ยกเลิก'); }
-function unpayBill(m,r){ setStatus(m,r,'รอชำระ'); }
+function markPaid(m,r){ if(!canMarkPaid()){toast('บัญชีนี้ไม่มีสิทธิ์บันทึกการชำระ');return;} setStatus(m,r,'ชำระแล้ว'); }
+function cancelBill(m,r){ if(!canCancelBill()){toast('เฉพาะ Admin เท่านั้นที่ยกเลิกบิลได้');return;} if(confirm('ยกเลิกบิลห้อง '+r+' ?')) setStatus(m,r,'ยกเลิก'); }
+function unpayBill(m,r){ if(!canMarkPaid()){toast('บัญชีนี้ไม่มีสิทธิ์แก้สถานะชำระ');return;} setStatus(m,r,'รอชำระ'); }
 $('billsFilter').addEventListener('change', renderBillsTable);
 $('btnSaveAllBills').addEventListener('click', saveAllBillsToSheet);
 
@@ -2317,12 +2382,13 @@ function renderACHistory(){
       <td class="num">${l.cost? Number(l.cost).toLocaleString('th-TH') : '—'}</td>
       <td>${esc(l.vendor||'—')}</td>
       <td>${l.photoURL? `<a href="${esc(l.photoURL)}" target="_blank">🖼 ดู</a>` : '—'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="delACLog('${l.id}')">ลบ</button></td></tr>`).join('')
+      <td>${canDeleteACLog()? `<button class="btn btn-danger btn-sm" onclick="delACLog('${l.id}')">ลบ</button>` : ''}</td></tr>`).join('')
     : '<tr><td colspan="8" class="hint" style="padding:18px">ไม่มีรายการ</td></tr>';
 }
 $('acHRoom').addEventListener('change', renderACHistory);
 $('acHAct').addEventListener('change', renderACHistory);
 async function delACLog(id){
+  if(!canDeleteACLog()){ toast('เฉพาะ Admin เท่านั้นที่ลบประวัติแอร์ได้'); return; }
   if(!confirm('ลบรายการนี้?')) return;
   try{
     await api('acdeletelog', {}, {id:id});
@@ -2338,11 +2404,12 @@ function renderACRooms(){
   $('acRoomsBody').innerHTML = state.ac.rooms.length? state.ac.rooms.map(r=>
     `<tr><td><b>${esc(r.roomNo)}</b></td><td><span class="badge type">${esc(r.type)}</span></td>
       <td>${esc(r.note||'—')}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openACRoomModal('${esc(r.roomNo)}')">แก้ไข</button>
-      <button class="btn btn-danger btn-sm" onclick="delACRoom('${esc(r.roomNo)}')">ลบ</button></td></tr>`).join('')
+      <td>${canManageACRooms()? `<button class="btn btn-ghost btn-sm" onclick="openACRoomModal('${esc(r.roomNo)}')">แก้ไข</button>
+      <button class="btn btn-danger btn-sm" onclick="delACRoom('${esc(r.roomNo)}')">ลบ</button>` : ''}</td></tr>`).join('')
     : '<tr><td colspan="4" class="hint" style="padding:18px">ยังไม่มีห้อง — กด "＋ เพิ่มห้อง"</td></tr>';
 }
 function openACRoomModal(room){
+  if(!canManageACRooms()){ toast('บัญชีนี้ไม่มีสิทธิ์แก้ข้อมูลห้อง/แอร์'); return; }
   const edit = state.ac.rooms.find(r=>r.roomNo===room);
   $('acRoomModalTitle').textContent = edit? 'แก้ไขห้อง '+room : 'เพิ่มห้อง';
   $('acmEditRoom').value = edit? room : '';
@@ -2364,6 +2431,7 @@ $('acmSave').addEventListener('click', async ()=>{
   }catch(e){ toast(e.message||'ไม่สำเร็จ'); }
 });
 async function delACRoom(room){
+  if(!canManageACRooms()){ toast('บัญชีนี้ไม่มีสิทธิ์แก้ข้อมูลห้อง/แอร์'); return; }
   if(!confirm('ลบห้อง '+room+'? (ประวัติงานเดิมยังอยู่)')) return;
   try{
     await api('acdeleteroom', {}, {room:room});
@@ -2434,11 +2502,13 @@ $('btnPrint').addEventListener('click', ()=>{ renderBill(); window.print(); });
 $('btnSaveBill').addEventListener('click', saveBillToSheet);
 $('btnConnect').addEventListener('click', ()=>{});
 $('btnSaveLocal').addEventListener('click', ()=>{
+  if(!canEditSettings()){ toast('เฉพาะ Admin เท่านั้นที่แก้ Settings ได้'); return; }
   readSettingsForm(); renderBill(); renderMeterGrid();
   state.ac.loaded = false;
   toast('บันทึกการตั้งค่าในเครื่องแล้ว ✓');
 });
 $('btnSaveRemote').addEventListener('click', async ()=>{
+  if(!canEditSettings()){ toast('เฉพาะ Admin เท่านั้นที่แก้ Settings ได้'); return; }
   readSettingsForm(); renderBill(); renderMeterGrid();
   if(!state.connected){ toast('ยังไม่ได้เชื่อมต่อ Firebase'); return; }
   try{
@@ -2489,6 +2559,7 @@ onAuthStateChanged(fbAuth, async user=>{
     $('authGateStatus').textContent='กำลังโหลดระบบ…';
     $('authUserText').textContent=(currentAuthorizedUser.name||user.email)+' · '+(currentAuthorizedUser.role||'');
     $('authUserChip').style.display='flex';
+    applyRolePermissions();
 
     fillSettingsForm();
     await loadMonth();
