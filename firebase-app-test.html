@@ -1294,7 +1294,7 @@ $('tmSave').addEventListener('click', async ()=>{
         idType:$('tmIdType').value}, file);
       toast('บันทึกผู้พัก + รูปบัตรแล้ว ✓');
     } else if(file && !state.connected){
-      toast('บันทึกข้อมูลแล้ว (รูปบัตรอัปโหลดได้เมื่อเชื่อมต่อ Google)');
+      toast('บันทึกข้อมูลแล้ว (รูปบัตรอัปโหลดได้เมื่อเชื่อมต่อ Firebase)');
     } else toast('บันทึกข้อมูลผู้พักแล้ว ✓');
     if(state.connected){
       const boot = await jsonp({action:'bootstrap'});
@@ -1952,6 +1952,126 @@ function cancelBill(m,r){ if(confirm('ยกเลิกบิลห้อง '+
 function unpayBill(m,r){ setStatus(m,r,'รอชำระ'); }
 $('billsFilter').addEventListener('change', renderBillsTable);
 $('btnSaveAllBills').addEventListener('click', saveAllBillsToSheet);
+
+
+/* ================= คำนวณสถานะแอร์จาก Firestore ================= */
+function addMonthsISO(iso, months){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y, (m-1)+Number(months||0), d);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+function daysBetweenISO(a,b){
+  if(!a || !b) return null;
+  const da = new Date(a+'T00:00:00');
+  const db = new Date(b+'T00:00:00');
+  return Math.round((db-da)/86400000);
+}
+function acSummary(log, settings, roomsOverride){
+  const s = settings || state.settings || {};
+  const interval = Number(s.intervalMonths) || 12;
+  const leadDays = Number(s.leadDays) || 30;
+  const fanLabel = s.fanLabel || 'พัดลม';
+  const today = todayISO();
+  const rooms = roomsOverride || state.ac.rooms || [];
+  const entries0 = log || [];
+
+  const byRoom = {};
+  entries0.forEach(e => {
+    const room = String(e.roomNo || '');
+    (byRoom[room] = byRoom[room] || []).push(e);
+  });
+
+  const out = [];
+  rooms.forEach(r => {
+    if(String(r.type || '') === fanLabel) return;
+
+    const roomNo = String(r.roomNo || '');
+    const entries = byRoom[roomNo] || [];
+    let installed = '', lastClean = '', cleanCount = 0;
+
+    entries.forEach(e => {
+      if(e.activity === 'ติดตั้งใหม่' || e.activity === 'เปลี่ยนเครื่อง'){
+        if(e.date && e.date > installed) installed = e.date;
+      }
+    });
+
+    entries.forEach(e => {
+      if(e.activity === 'ล้างแอร์' && (!installed || e.date >= installed)){
+        cleanCount++;
+        if(e.date && e.date > lastClean) lastClean = e.date;
+      }
+    });
+
+    const baseline = lastClean || installed;
+    const nextDue = baseline ? addMonthsISO(baseline, interval) : '';
+
+    let status = 'ไม่มีข้อมูล', order = 5;
+    let daysLeft = null;
+
+    if(nextDue){
+      daysLeft = daysBetweenISO(today, nextDue);
+      if(daysLeft < 0){ status = 'เกินกำหนด'; order = 0; }
+      else if(daysLeft <= leadDays){ status = 'ใกล้ครบกำหนด'; order = 1; }
+      else { status = 'ปกติ'; order = 2; }
+    }
+
+    out.push({
+      roomNo,
+      type: String(r.type || ''),
+      installed,
+      lastClean,
+      nextDue,
+      neverCleaned: !lastClean,
+      cleanCount,
+      daysLeft,
+      status,
+      order
+    });
+  });
+
+  out.sort((a,b) => a.order - b.order ||
+    String(a.nextDue || '9999-12-31').localeCompare(String(b.nextDue || '9999-12-31')) ||
+    String(a.roomNo).localeCompare(String(b.roomNo),'th',{numeric:true})
+  );
+
+  return out;
+}
+
+function acStats(summary, log){
+  const sum = summary || [];
+  const entries = log || [];
+  const thisYear = todayISO().slice(0,4);
+  const thisMonth = todayISO().slice(0,7);
+
+  let cleanYr = 0, cleanMo = 0;
+  entries.forEach(e => {
+    if(e.activity === 'ล้างแอร์' && e.date){
+      if(e.date.slice(0,4) === thisYear) cleanYr++;
+      if(e.date.slice(0,7) === thisMonth) cleanMo++;
+    }
+  });
+
+  const st = {
+    totalAC: sum.length,
+    overdue: 0,
+    dueSoon: 0,
+    ok: 0,
+    neverCleaned: 0,
+    cleanedThisYear: cleanYr,
+    cleanedThisMonth: cleanMo
+  };
+
+  sum.forEach(r => {
+    if(r.status === 'เกินกำหนด') st.overdue++;
+    else if(r.status === 'ใกล้ครบกำหนด') st.dueSoon++;
+    else if(r.status === 'ปกติ') st.ok++;
+    if(r.neverCleaned) st.neverCleaned++;
+  });
+
+  return st;
+}
+
 
 /* ═══════════════ ★ โมดูลล้างแอร์ ═══════════════ */
 function acBadge(st){
