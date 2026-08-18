@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>กนกรัศม์ — Apartment Management (Firebase v4)</title>
+<title>กนกรัศม์ — Apartment Management (Firebase v5)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -322,7 +322,12 @@ table.tbl tr:hover td{background:#f7f9fb}
       <button class="home-card c-set" onclick="showModule('setting')">
         <span class="ic">⚙️</span>
         <span><b>ตั้งค่า</b>
-        <small>API URL · ค่าไฟ ค่าน้ำ ค่าเช่า · รอบล้างแอร์ · ข้อความท้ายบิล</small></span>
+        <small>ค่าไฟ · ค่าน้ำ · ค่าเช่า · รอบล้างแอร์ · ข้อความท้ายบิล</small></span>
+      </button>
+      <button class="home-card c-set" id="homeAuditCard" onclick="showModule('audit')">
+        <span class="ic">🕓</span>
+        <span><b>ประวัติการแก้ไข</b>
+        <small>ตรวจสอบว่าใครแก้ข้อมูลอะไร เมื่อไร และก่อน/หลังเป็นอย่างไร</small></span>
       </button>
     </div>
     <div class="home-foot" id="homeConnHint">กำลังเชื่อมต่อ Firebase…</div>
@@ -658,6 +663,48 @@ table.tbl tr:hover td{background:#f7f9fb}
 </main>
 </section>
 
+
+<!-- ═══════════════ โมดูล: ประวัติการแก้ไข ═══════════════ -->
+<section class="module" id="module-audit">
+<main>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <h2 style="margin:0">🕓 ประวัติการแก้ไข</h2>
+        <p class="hint" style="margin-top:4px">แสดงรายการล่าสุดสูงสุด 200 รายการ · เฉพาะ Admin / Manager</p>
+      </div>
+      <button class="btn btn-ghost" id="btnRefreshAudit">↻ โหลดใหม่</button>
+    </div>
+
+    <div class="toolbar" style="margin-top:12px">
+      <select id="auditTypeFilter">
+        <option value="">ทุกประเภท</option>
+        <option value="meter">มิเตอร์</option>
+        <option value="billDraft">ค่าปรับบิลรายเดือน</option>
+        <option value="bill">บิล</option>
+        <option value="payment">สถานะชำระ</option>
+        <option value="tenant">ผู้พัก</option>
+        <option value="ac">ล้างแอร์</option>
+        <option value="room">ห้อง / แอร์</option>
+        <option value="settings">ตั้งค่า</option>
+      </select>
+      <input id="auditSearch" placeholder="ค้นหาห้อง / user / action" style="min-width:220px">
+      <span class="hint" id="auditCount"></span>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table class="tbl">
+        <thead><tr>
+          <th>เวลา</th><th>User</th><th>ประเภท</th><th>Action</th>
+          <th>รายการ</th><th>รายละเอียด</th>
+        </tr></thead>
+        <tbody id="auditRows"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</section>
+
 <!-- ═══════════════ โมดูล: ตั้งค่า ═══════════════ -->
 <section class="module" id="module-setting">
 <main>
@@ -836,8 +883,8 @@ import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 import {
-  getFirestore, collection, doc, getDoc, getDocs, query, where,
-  setDoc, updateDoc, deleteDoc, serverTimestamp
+  getFirestore, collection, doc, getDoc, getDocs, query, where, orderBy, limit,
+  setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -885,6 +932,7 @@ const state = {
   // เช่น 2026-07|201 เพื่อไม่ให้ค่าของแต่ละห้องทับกัน
   billDrafts: {},
   billDraftTimers: {},
+  auditLogs: [],
   ac: { rooms:[], log:[], summary:[], stats:{}, loaded:false },
 };
 
@@ -907,6 +955,7 @@ function canMoveOutTenant(){ return isAdmin() || isManager(); }
 function canEditSettings(){ return isAdmin(); }
 function canDeleteACLog(){ return isAdmin(); }
 function canManageACRooms(){ return isAdmin() || isManager(); }
+function canViewAudit(){ return isAdmin() || isManager(); }
 
 function applyRolePermissions(){
   const role = currentRole();
@@ -914,6 +963,9 @@ function applyRolePermissions(){
   // Settings: admin only
   const setCard = document.querySelector('.home-card.c-set');
   if(setCard) setCard.style.display = canEditSettings() ? '' : 'none';
+
+  const auditCard = $('homeAuditCard');
+  if(auditCard) auditCard.style.display = canViewAudit() ? '' : 'none';
 
   // Billing financial adjustments: admin / manager only
   ['fRent','fArrears','fCommon','fFine','fPhone','fParking','fDue'].forEach(id=>{
@@ -941,6 +993,130 @@ function applyRolePermissions(){
   }
 
   document.body.dataset.role = role;
+}
+
+
+/* ================= Audit Log ================= */
+function auditSafe(v){
+  if(v === undefined) return null;
+  if(v === null) return null;
+  if(typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return v;
+  if(Array.isArray(v)) return v.slice(0,50).map(auditSafe);
+  if(typeof v === 'object'){
+    const out = {};
+    Object.entries(v).forEach(([k,val])=>{
+      if(['idImageFileId','idImageUrl','photoURL'].includes(k)) return;
+      out[k] = auditSafe(val);
+    });
+    return out;
+  }
+  return String(v);
+}
+
+async function writeAudit({type, action, entityId='', room='', before=null, after=null, note=''}) {
+  if(!currentAuthorizedUser || !currentAuthUser) return;
+  try{
+    await addDoc(collection(fbDb,'auditLogs'),{
+      type:String(type||''),
+      action:String(action||''),
+      entityId:String(entityId||''),
+      room:String(room||''),
+      before:auditSafe(before),
+      after:auditSafe(after),
+      note:String(note||''),
+      userEmail:currentAuthUser.email||'',
+      userName:currentAuthorizedUser.name||'',
+      role:currentAuthorizedUser.role||'',
+      createdAt:new Date().toISOString()
+    });
+  }catch(e){
+    console.error('Audit log failed:', e);
+  }
+}
+
+function auditTypeLabel(t){
+  return ({
+    meter:'มิเตอร์',
+    billDraft:'ค่าปรับบิล',
+    bill:'บิล',
+    payment:'ชำระเงิน',
+    tenant:'ผู้พัก',
+    ac:'ล้างแอร์',
+    room:'ห้อง/แอร์',
+    settings:'ตั้งค่า'
+  })[t] || t || '-';
+}
+
+function auditTimeText(v){
+  if(!v) return '-';
+  const d = new Date(v);
+  if(Number.isNaN(d.getTime())) return String(v);
+  return d.toLocaleString('th-TH',{
+    day:'2-digit',month:'2-digit',year:'numeric',
+    hour:'2-digit',minute:'2-digit',second:'2-digit'
+  });
+}
+
+function auditDetailText(x){
+  if(!x) return '';
+  const b = x.before, a = x.after;
+  const fmtObj = o=>{
+    if(!o || typeof o!=='object') return o==null?'':String(o);
+    return Object.entries(o).map(([k,v])=>{
+      if(v && typeof v==='object') return k+': '+JSON.stringify(v);
+      return k+': '+String(v ?? '');
+    }).join(' · ');
+  };
+  if(b && a) return 'ก่อน: '+fmtObj(b)+' | หลัง: '+fmtObj(a);
+  if(a) return fmtObj(a);
+  if(b) return 'ก่อน: '+fmtObj(b);
+  return x.note || '';
+}
+
+async function loadAuditLogs(){
+  if(!canViewAudit()){
+    state.auditLogs=[];
+    renderAuditLogs();
+    return;
+  }
+  $('auditRows').innerHTML='<tr><td colspan="6" class="hint" style="padding:18px">กำลังโหลด…</td></tr>';
+  try{
+    const qy=query(collection(fbDb,'auditLogs'),orderBy('createdAt','desc'),limit(200));
+    const s=await getDocs(qy);
+    state.auditLogs=s.docs.map(d=>Object.assign({id:d.id},d.data()));
+    renderAuditLogs();
+  }catch(e){
+    console.error(e);
+    $('auditRows').innerHTML='<tr><td colspan="6" class="hint" style="padding:18px">โหลดไม่สำเร็จ: '+esc(e.message)+'</td></tr>';
+  }
+}
+
+function renderAuditLogs(){
+  if(!$('auditRows')) return;
+  if(!canViewAudit()){
+    $('auditRows').innerHTML='<tr><td colspan="6" class="hint" style="padding:18px">ไม่มีสิทธิ์ดูประวัติ</td></tr>';
+    return;
+  }
+  const type=$('auditTypeFilter')?.value||'';
+  const q=($('auditSearch')?.value||'').trim().toLowerCase();
+  const rows=(state.auditLogs||[]).filter(x=>{
+    if(type && x.type!==type) return false;
+    if(!q) return true;
+    return [
+      x.userEmail,x.userName,x.action,x.entityId,x.room,x.note,auditTypeLabel(x.type)
+    ].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+  $('auditCount').textContent=rows.length+' รายการ';
+  $('auditRows').innerHTML=rows.length?rows.map(x=>`
+    <tr>
+      <td>${auditTimeText(x.createdAt)}</td>
+      <td>${esc(x.userName||x.userEmail||'-')}<div class="hint">${esc(x.userEmail||'')}</div></td>
+      <td><span class="badge type">${esc(auditTypeLabel(x.type))}</span></td>
+      <td>${esc(x.action||'-')}</td>
+      <td>${x.room? 'ห้อง '+esc(x.room) : esc(x.entityId||'-')}</td>
+      <td style="white-space:normal;min-width:300px">${esc(auditDetailText(x))}</td>
+    </tr>`).join('')
+    : '<tr><td colspan="6" class="hint" style="padding:18px">ไม่พบรายการ</td></tr>';
 }
 
 /* ================= ยูทิลิตี ================= */
@@ -975,6 +1151,10 @@ function showModule(name){
     toast('เฉพาะ Admin เท่านั้นที่แก้การตั้งค่าได้');
     name='home';
   }
+  if(name==='audit' && !canViewAudit()){
+    toast('บัญชีนี้ไม่มีสิทธิ์ดูประวัติการแก้ไข');
+    name='home';
+  }
   document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
   $('module-'+name).classList.add('active');
   $('monthPickWrap').style.display = name==='bill' ? 'flex' : 'none';
@@ -983,6 +1163,7 @@ function showModule(name){
   if(name==='bill'){ renderDashboard(); }
   if(name==='tenant') renderTenants();
   if(name==='setting') fillSettingsForm();
+  if(name==='audit') loadAuditLogs();
   if(name==='ac') loadAC();
 }
 document.querySelectorAll('nav.tabs').forEach(nav=>{
@@ -1048,11 +1229,18 @@ async function api(action, params={}, data){
     for(const r of data.readings||[]){
       if(r.water==null && r.elec==null) continue;
       const id = `${data.month}_${r.room}`;
-      await setDoc(doc(fbDb,'meterReadings',id),{
+      const ref = doc(fbDb,'meterReadings',id);
+      const oldSnap = await getDoc(ref);
+      const before = oldSnap.exists()? {water:oldSnap.data().water??null, elec:oldSnap.data().elec??null} : null;
+      const after = {water:r.water??null, elec:r.elec??null};
+      await setDoc(ref,{
         month:data.month,room:String(r.room),
-        water:r.water??null,elec:r.elec??null,
+        water:after.water,elec:after.elec,
         recordedAt:new Date().toISOString(), recordedBy: currentAuthUser?.email||''
       },{merge:true});
+      if(JSON.stringify(before)!==JSON.stringify(after)){
+        await writeAudit({type:'meter',action:'save',entityId:id,room:r.room,before,after});
+      }
     }
     return {ok:true};
   }
@@ -1070,32 +1258,62 @@ async function api(action, params={}, data){
 
   if(a==='savebill'){
     const b=data.bill, id=`${data.month}_${b.room}`, t=activeTenantOf(String(b.room));
-    const existing = await getDoc(doc(fbDb,'bills',id));
+    const ref = doc(fbDb,'bills',id);
+    const existing = await getDoc(ref);
     const ex = existing.exists()? existing.data() : {};
-    await setDoc(doc(fbDb,'bills',id),{
-      month:data.month, room:String(b.room), billNo:b.no||'',
+    const before = existing.exists()? {
+      items:ex.items||{}, total:Number(ex.total)||0, due:ex.due||'',
+      status:ex.status||'รอชำระ'
+    } : null;
+    const after = {
       items:b.items||{}, total:Number(b.total)||0, due:b.due||'',
-      status:ex.status||'รอชำระ', paidDate:ex.paidDate||'',
+      status:ex.status||'รอชำระ'
+    };
+    await setDoc(ref,{
+      month:data.month, room:String(b.room), billNo:b.no||'',
+      items:after.items, total:after.total, due:after.due,
+      status:after.status, paidDate:ex.paidDate||'',
       tenantId:t?.tenantId||'', tenantName:t?tenantName(t):'',
       moveInDate:t?.moveInDate||'',
       savedAt:new Date().toISOString(), updatedBy:currentAuthUser?.email||''
     },{merge:true});
+    await writeAudit({
+      type:'bill', action: existing.exists()?'update':'create',
+      entityId:id, room:b.room, before, after
+    });
     return {ok:true};
   }
 
   if(a==='setbillstatus' || a==='markpaid'){
     const id=`${data.month}_${data.room}`;
-    await setDoc(doc(fbDb,'bills',id),{
-      status:a==='markpaid'?'ชำระแล้ว':data.status,
-      paidDate:(a==='markpaid'||data.status==='ชำระแล้ว') ? (data.paidDate||todayISO()) : '',
+    const ref=doc(fbDb,'bills',id);
+    const oldSnap=await getDoc(ref);
+    const old=oldSnap.exists()?oldSnap.data():{};
+    const newStatus=a==='markpaid'?'ชำระแล้ว':data.status;
+    const newPaid=(a==='markpaid'||data.status==='ชำระแล้ว') ? (data.paidDate||todayISO()) : '';
+    await setDoc(ref,{
+      status:newStatus,
+      paidDate:newPaid,
       updatedAt:new Date().toISOString(), updatedBy:currentAuthUser?.email||''
     },{merge:true});
+    await writeAudit({
+      type:'payment',
+      action:newStatus==='ชำระแล้ว'?'mark_paid':newStatus==='ยกเลิก'?'cancel_bill':'change_status',
+      entityId:id,room:data.room,
+      before:{status:old.status||'รอชำระ',paidDate:old.paidDate||''},
+      after:{status:newStatus,paidDate:newPaid}
+    });
     return {ok:true};
   }
 
   if(a==='savesettings'){
     const s=data.settings||data||{};
-    await setDoc(doc(fbDb,'config','apartment'),s,{merge:true});
+    const ref=doc(fbDb,'config','apartment');
+    const oldSnap=await getDoc(ref);
+    const before=oldSnap.exists()?oldSnap.data():null;
+    await setDoc(ref,s,{merge:true});
+    const after=Object.assign({},before||{},s);
+    await writeAudit({type:'settings',action:'update',entityId:'apartment',before,after});
     return {ok:true};
   }
 
@@ -1106,15 +1324,29 @@ async function api(action, params={}, data){
       let max=0; all.forEach(x=>{const m=String(x.tenantId||x.__id).match(/^T-(\d+)$/); if(m)max=Math.max(max,+m[1]);});
       tenantId='T-'+String(max+1).padStart(4,'0');
     }
-    const old=await getDoc(doc(fbDb,'tenants',tenantId));
+    const ref=doc(fbDb,'tenants',tenantId);
+    const old=await getDoc(ref);
     const ex=old.exists()?old.data():{};
-    await setDoc(doc(fbDb,'tenants',tenantId),{
-      tenantId, room:String(data.room), firstName:data.firstName||'', lastName:data.lastName||'',
-      phone:data.phone||'', idType:data.idType||'', idNumberLast4:data.idNumberLast4||'',
-      moveInDate:data.moveInDate||'', moveOutDate:ex.moveOutDate||'',
-      status:ex.status||'active', idImageFileId:ex.idImageFileId||'', idImageUrl:ex.idImageUrl||'',
+    const before=old.exists()?{
+      room:String(ex.room||''),firstName:ex.firstName||'',lastName:ex.lastName||'',
+      phone:ex.phone||'',idType:ex.idType||'',idNumberLast4:ex.idNumberLast4||'',
+      moveInDate:ex.moveInDate||'',moveOutDate:ex.moveOutDate||'',status:ex.status||'active'
+    }:null;
+    const after={
+      room:String(data.room),firstName:data.firstName||'',lastName:data.lastName||'',
+      phone:data.phone||'',idType:data.idType||'',idNumberLast4:data.idNumberLast4||'',
+      moveInDate:data.moveInDate||'',moveOutDate:ex.moveOutDate||'',
+      status:ex.status||'active'
+    };
+    await setDoc(ref,Object.assign({
+      tenantId,
+      idImageFileId:ex.idImageFileId||'', idImageUrl:ex.idImageUrl||'',
       createdAt:ex.createdAt||new Date().toISOString(), updatedAt:new Date().toISOString()
-    },{merge:true});
+    },after),{merge:true});
+    await writeAudit({
+      type:'tenant',action:old.exists()?'update':'create',
+      entityId:tenantId,room:data.room,before,after
+    });
     if(data.roomType && !isStaff()){
       const patch={type:data.roomType};
       if(data.applyDefaultRent) patch.rent=ROOM_TYPES[data.roomType]||0;
@@ -1124,9 +1356,18 @@ async function api(action, params={}, data){
   }
 
   if(a==='moveout'){
-    await setDoc(doc(fbDb,'tenants',String(data.tenantId)),{
-      moveOutDate:data.moveOutDate||todayISO(), status:'moved_out', updatedAt:new Date().toISOString()
+    const ref=doc(fbDb,'tenants',String(data.tenantId));
+    const oldSnap=await getDoc(ref);
+    const old=oldSnap.exists()?oldSnap.data():{};
+    const outDate=data.moveOutDate||todayISO();
+    await setDoc(ref,{
+      moveOutDate:outDate, status:'moved_out', updatedAt:new Date().toISOString()
     },{merge:true});
+    await writeAudit({
+      type:'tenant',action:'move_out',entityId:data.tenantId,room:old.room||'',
+      before:{status:old.status||'active',moveOutDate:old.moveOutDate||''},
+      after:{status:'moved_out',moveOutDate:outDate}
+    });
     return {ok:true};
   }
 
@@ -1142,26 +1383,50 @@ async function api(action, params={}, data){
 
   if(a==='acaddlog'){
     const id='L'+Date.now();
-    await setDoc(doc(fbDb,'acLogs',id),{
+    const after={
       id,date:data.date,roomNo:String(data.room),activity:data.activity||'',note:data.note||'',
-      cost:data.cost===''?null:Number(data.cost),vendor:data.vendor||'',photoURL:data.photoURL||'',
+      cost:data.cost===''?null:Number(data.cost),vendor:data.vendor||'',photoURL:data.photoURL||''
+    };
+    await setDoc(doc(fbDb,'acLogs',id),Object.assign({},after,{
       createdAt:new Date().toISOString(),createdBy:currentAuthUser?.email||''
-    });
+    }));
+    await writeAudit({type:'ac',action:'create_log',entityId:id,room:data.room,after});
     return {ok:true,id};
   }
 
-  if(a==='acdeletelog'){ await deleteDoc(doc(fbDb,'acLogs',String(data.id))); return {ok:true}; }
+  if(a==='acdeletelog'){
+    const ref=doc(fbDb,'acLogs',String(data.id));
+    const oldSnap=await getDoc(ref);
+    const before=oldSnap.exists()?oldSnap.data():null;
+    await deleteDoc(ref);
+    await writeAudit({type:'ac',action:'delete_log',entityId:data.id,room:before?.roomNo||'',before});
+    return {ok:true};
+  }
 
   if(a==='acaddroom' || a==='acupdateroom'){
     const room=String(data.room);
-    await setDoc(doc(fbDb,'rooms',room),{
-      room,hasAircon:true,acType:data.type||'',acNote:data.note||''
-    },{merge:true});
+    const ref=doc(fbDb,'rooms',room);
+    const oldSnap=await getDoc(ref);
+    const old=oldSnap.exists()?oldSnap.data():{};
+    const before={hasAircon:!!old.hasAircon,acType:old.acType||'',acNote:old.acNote||''};
+    const after={hasAircon:true,acType:data.type||'',acNote:data.note||''};
+    await setDoc(ref,Object.assign({room},after),{merge:true});
+    await writeAudit({
+      type:'room',action:a==='acaddroom'?'add_ac_room':'update_ac_room',
+      entityId:room,room,before,after
+    });
     return {ok:true};
   }
 
   if(a==='acdeleteroom'){
-    await setDoc(doc(fbDb,'rooms',String(data.room)),{hasAircon:false,acType:'',acNote:''},{merge:true});
+    const room=String(data.room);
+    const ref=doc(fbDb,'rooms',room);
+    const oldSnap=await getDoc(ref);
+    const old=oldSnap.exists()?oldSnap.data():{};
+    const before={hasAircon:!!old.hasAircon,acType:old.acType||'',acNote:old.acNote||''};
+    const after={hasAircon:false,acType:'',acNote:''};
+    await setDoc(ref,after,{merge:true});
+    await writeAudit({type:'room',action:'remove_ac_room',entityId:room,room,before,after});
     return {ok:true};
   }
 
@@ -1548,19 +1813,35 @@ async function persistBillDraft(room){
   const key = billDraftKey(room);
   const d = state.billDrafts[key];
   if(!d) return;
-  await setDoc(doc(fbDb,'billDrafts',key),{
-    month:state.month,
-    room:String(room),
+  const ref = doc(fbDb,'billDrafts',key);
+  const oldSnap = await getDoc(ref);
+  const before = oldSnap.exists()? {
+    rent:Number(oldSnap.data().rent)||0,
+    arrears:Number(oldSnap.data().arrears)||0,
+    common:Number(oldSnap.data().common)||0,
+    fine:Number(oldSnap.data().fine)||0,
+    phone:Number(oldSnap.data().phone)||0,
+    parking:Number(oldSnap.data().parking)||0,
+    due:oldSnap.data().due||''
+  } : null;
+  const after = {
     rent:Number(d.rent)||0,
     arrears:Number(d.arrears)||0,
     common:Number(d.common)||0,
     fine:Number(d.fine)||0,
     phone:Number(d.phone)||0,
     parking:Number(d.parking)||0,
-    due:d.due||dueOf(state.month),
+    due:d.due||dueOf(state.month)
+  };
+  await setDoc(ref,Object.assign({
+    month:state.month,
+    room:String(room),
     updatedAt:new Date().toISOString(),
     updatedBy:currentAuthUser?.email||''
-  },{merge:true});
+  },after),{merge:true});
+  if(JSON.stringify(before)!==JSON.stringify(after)){
+    await writeAudit({type:'billDraft',action:'update',entityId:key,room,before,after});
+  }
 }
 
 function scheduleBillDraftSave(room){
@@ -2101,6 +2382,10 @@ function cancelBill(m,r){ if(!canCancelBill()){toast('เฉพาะ Admin เ�
 function unpayBill(m,r){ if(!canMarkPaid()){toast('บัญชีนี้ไม่มีสิทธิ์แก้สถานะชำระ');return;} setStatus(m,r,'รอชำระ'); }
 $('billsFilter').addEventListener('change', renderBillsTable);
 $('btnSaveAllBills').addEventListener('click', saveAllBillsToSheet);
+
+$('btnRefreshAudit').addEventListener('click', loadAuditLogs);
+$('auditTypeFilter').addEventListener('change', renderAuditLogs);
+$('auditSearch').addEventListener('input', renderAuditLogs);
 
 
 /* ================= คำนวณสถานะแอร์จาก Firestore ================= */
